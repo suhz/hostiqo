@@ -48,14 +48,14 @@ class WebhookController extends Controller
             'repository_url' => ['required', 'string'],
             'branch' => ['required', 'string', 'max:255'],
             'local_path' => ['required', 'string', 'max:500'],
-            'is_active' => ['boolean'],
+            'is_active' => ['nullable', 'boolean'],
             'pre_deploy_script' => ['nullable', 'string'],
             'post_deploy_script' => ['nullable', 'string'],
-            'generate_ssh_key' => ['boolean'],
+            'generate_ssh_key' => ['nullable', 'boolean'],
         ]);
 
         $validated['secret_token'] = Str::random(64);
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->boolean('is_active');
 
         $webhook = Webhook::create($validated);
 
@@ -101,12 +101,12 @@ class WebhookController extends Controller
             'repository_url' => ['required', 'string'],
             'branch' => ['required', 'string', 'max:255'],
             'local_path' => ['required', 'string', 'max:500'],
-            'is_active' => ['boolean'],
+            'is_active' => ['nullable', 'boolean'],
             'pre_deploy_script' => ['nullable', 'string'],
             'post_deploy_script' => ['nullable', 'string'],
         ]);
 
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->boolean('is_active');
 
         $webhook->update($validated);
 
