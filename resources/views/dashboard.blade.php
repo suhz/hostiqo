@@ -16,7 +16,7 @@
                             <h3 class="mb-0">{{ $totalWebhooks }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2.5rem;">
-                            <i class="bi bi-cloud-check"></i>
+                            <i class="bi bi-hdd-network"></i>
                         </div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                             <h3 class="mb-0">{{ $activeWebhooks }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2.5rem;">
-                            <i class="bi bi-check-circle"></i>
+                            <i class="bi bi-hdd-rack"></i>
                         </div>
                     </div>
                 </div>
@@ -48,7 +48,7 @@
                             <h3 class="mb-0">{{ $totalDeployments }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2.5rem;">
-                            <i class="bi bi-arrow-repeat"></i>
+                            <i class="bi bi-cloud-check"></i>
                         </div>
                     </div>
                 </div>
@@ -64,7 +64,74 @@
                             <h3 class="mb-0">{{ $recentDeployments->where('created_at', '>=', now()->subDay())->count() }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2.5rem;">
-                            <i class="bi bi-clock-history"></i>
+                            <i class="bi bi-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">PHP Websites</p>
+                            <h3 class="mb-0">{{ $totalPhpWebsites }}</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem;">
+                            <i class="bi bi-filetype-php"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Node.js Websites</p>
+                            <h3 class="mb-0">{{ $totalNodeWebsites }}</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem;">
+                            <i class="bi bi-filetype-js"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Databases</p>
+                            <h3 class="mb-0">{{ $totalDatabases }}</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem;">
+                            <i class="bi bi-database"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Pending Queues</p>
+                            <h3 class="mb-0">{{ $pendingQueues }}</h3>
+                        </div>
+                        <div class="text-{{ $pendingQueues > 0 ? 'danger' : 'primary' }}" style="font-size: 2.5rem;">
+                            <i class="bi bi-files"></i>
                         </div>
                     </div>
                 </div>

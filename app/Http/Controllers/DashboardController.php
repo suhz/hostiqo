@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Database;
 use App\Models\Deployment;
 use App\Models\Webhook;
+use App\Models\Website;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -25,12 +28,39 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
+        // Website statistics
+        try {
+            $totalPhpWebsites = Website::where('project_type', 'php')->count();
+            $totalNodeWebsites = Website::where('project_type', 'node')->count();
+        } catch (\Exception $e) {
+            $totalPhpWebsites = 0;
+            $totalNodeWebsites = 0;
+        }
+
+        // Database statistics
+        try {
+            $totalDatabases = Database::count();
+        } catch (\Exception $e) {
+            $totalDatabases = 0;
+        }
+
+        // Pending queue jobs
+        try {
+            $pendingQueues = DB::table('jobs')->count();
+        } catch (\Exception $e) {
+            $pendingQueues = 0;
+        }
+
         return view('dashboard', compact(
             'totalWebhooks',
             'activeWebhooks',
             'totalDeployments',
             'recentDeployments',
-            'webhooks'
+            'webhooks',
+            'totalPhpWebsites',
+            'totalNodeWebsites',
+            'totalDatabases',
+            'pendingQueues'
         ));
     }
 }
