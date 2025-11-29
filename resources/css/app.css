@@ -1,11 +1,476 @@
-@import 'tailwindcss';
+/* Main Application Styles - Git Webhook Manager */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+:root {
+    --sidebar-width: 250px;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+body {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    padding-top: 1rem;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .brand {
+    padding: 1rem 1.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar .nav-link:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left-color: white;
+}
+
+.sidebar .nav-link.active {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-left-color: white;
+    font-weight: 500;
+}
+
+/* User Info Section */
+.user-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info .user-name {
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.user-info .user-email {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.btn-logout {
+    background: rgba(220, 53, 69, 0.8);
+    border: none;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background: rgba(220, 53, 69, 1);
+    color: white;
+}
+
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 2px solid #f8f9fa;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}
+
+.stat-card {
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Badge Styles */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Code Block Styles */
+pre {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.code-block {
+    position: relative;
+}
+
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    opacity: 0.7;
+}
+
+.copy-btn:hover {
+    opacity: 1;
+}
+
+/* Chart Canvas - Default Desktop Height */
+canvas {
+    min-height: 400px;
+    height: 400px;
+}
+
+/* Mobile Navigation Toggle */
+.mobile-menu-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1100;
+    background: #0d6efd;
+    border: none;
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-menu-toggle:hover {
+    background: #0a58ca;
+}
+
+/* Mobile Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+/* Responsive Design - Tablets and Below */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 250px; /* Fixed width on mobile */
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+    
+    .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Hide user info on mobile */
+    .user-info {
+        display: none;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 5rem 1.5rem 1.5rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Stack stat cards on mobile */
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card:hover {
+        transform: none;
+    }
+    
+    /* Charts - proper height for tablets */
+    canvas {
+        min-height: 280px !important;
+        height: 280px !important;
+    }
+    
+    /* Adjust page header for mobile */
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between > div:last-child {
+        width: 100%;
+    }
+    
+    .d-flex.justify-content-between .btn-group,
+    .d-flex.justify-content-between .d-flex.gap-2 {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+    }
+}
+
+/* Tablet Specific */
+@media (max-width: 768px) and (min-width: 577px) {
+    /* Stat cards - good spacing on tablets */
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card h3 {
+        font-size: 1.75rem;
+    }
+    
+    .stat-card .text-primary {
+        font-size: 2.25rem !important;
+    }
+}
+
+/* Mobile Specific - Phones */
+@media (max-width: 576px) {
+    .main-content {
+        padding: 4.5rem 1rem 1rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.75rem;
+    }
+    
+    /* Stat cards - keep horizontal layout on mobile */
+    .stat-card {
+        margin-bottom: 0 !important;
+    }
+    
+    .stat-card .card-body {
+        padding: 1rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+    
+    /* Force horizontal layout - more specific selector */
+    .stat-card .card-body .d-flex {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        display: flex !important;
+    }
+    
+    .stat-card .card-body .d-flex.mb-2 {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Keep text content on left, icon on right */
+    .stat-card .card-body .d-flex > div:first-child {
+        flex: 0 1 auto;
+        text-align: left;
+        margin-right: auto;
+    }
+    
+    .stat-card .card-body .d-flex > div:last-child {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+    
+    .stat-card .text-muted {
+        font-size: 0.7rem;
+    }
+    
+    .stat-card h3 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .stat-card .text-primary {
+        font-size: 2rem !important;
+    }
+    
+    .stat-card small {
+        font-size: 0.65rem;
+    }
+    
+    .stat-card .progress {
+        margin-top: 0.5rem;
+    }
+    
+    /* Ensure columns have proper spacing on mobile */
+    .col-md-3,
+    .col-md-4,
+    .col-sm-6,
+    .col-lg-3 {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Remove Bootstrap's default gutter spacing and use row-gap instead */
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    .row > * {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    
+    /* Chart containers - proper height on mobile */
+    canvas {
+        min-height: 350px !important;
+        height: 350px !important;
+    }
+    
+    /* Chart card body - ensure proper padding */
+    .card canvas {
+        margin: 0 !important;
+    }
+    
+    .card .card-body {
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Card spacing on mobile */
+    .row.mb-4 {
+        margin-bottom: 1rem !important;
+        row-gap: 1rem !important;
+    }
+    
+    .row {
+        row-gap: 1rem !important;
+    }
+    
+    .card {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Stat cards spacing */
+    .stat-card {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Card headers */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+    
+    .card-header .btn {
+        width: 100%;
+    }
+    
+    /* Buttons */
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    /* Tables */
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    .table td,
+    .table th {
+        padding: 0.5rem;
+    }
+    
+    /* Hide certain table columns on very small screens */
+    .table .d-none-mobile {
+        display: none;
+    }
+    
+    /* Badge sizing */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    /* Form inputs */
+    .form-control,
+    .form-select {
+        font-size: 1rem;
+    }
+    
+    /* Code blocks */
+    pre {
+        font-size: 0.75rem;
+        padding: 0.75rem;
+    }
 }
