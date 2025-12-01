@@ -119,6 +119,40 @@ php artisan route:cache
 php artisan view:cache
 print_success "Application optimized"
 
+# Setup PHP-FPM logs
+print_header "PHP-FPM Log Setup"
+echo ""
+print_info "Setting up PHP-FPM log files and directories..."
+
+# Create main PHP-FPM log file
+if [ ! -f "/var/log/php-fpm.log" ]; then
+    print_info "Creating /var/log/php-fpm.log..."
+    sudo touch /var/log/php-fpm.log
+    sudo chown www-data:www-data /var/log/php-fpm.log
+    sudo chmod 644 /var/log/php-fpm.log
+    print_success "Created /var/log/php-fpm.log"
+else
+    print_info "/var/log/php-fpm.log already exists"
+fi
+
+# Detect and setup logs for all installed PHP versions
+for php_version in $(ls -d /etc/php/*/ 2>/dev/null | grep -oP '\d+\.\d+' | sort -u); do
+    log_dir="/var/log/php${php_version}-fpm"
+    
+    if [ ! -d "$log_dir" ]; then
+        print_info "Creating log directory for PHP ${php_version}..."
+        sudo mkdir -p "$log_dir"
+        sudo chown www-data:www-data "$log_dir"
+        sudo chmod 755 "$log_dir"
+        print_success "Created $log_dir"
+    else
+        print_info "Log directory for PHP ${php_version} already exists"
+    fi
+done
+
+print_success "PHP-FPM logs configured"
+echo ""
+
 # Setup Supervisor configs
 print_header "Supervisor Configuration"
 echo ""
@@ -194,6 +228,7 @@ echo "  ✓ Permissions set correctly"
 echo "  ✓ Database migrations ready"
 echo "  ✓ Frontend assets built"
 echo "  ✓ Application optimized"
+echo "  ✓ PHP-FPM log files and directories"
 echo "  ✓ Supervisor configs created"
 echo ""
 print_info "Next steps:"
