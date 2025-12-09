@@ -37,8 +37,8 @@ class LogViewerController extends Controller
                 break;
         }
 
-        if ($logFile && file_exists($logFile)) {
-            // Read last 1000 lines
+        if ($logFile) {
+            // Read last 1000 lines using Process (bypasses open_basedir restrictions)
             $result = Process::run("tail -n 1000 {$logFile}");
             
             if ($result->successful()) {
@@ -54,6 +54,13 @@ class LogViewerController extends Controller
                 }
 
                 $logs = array_slice($lines, 0, 500); // Limit to 500 lines
+            } elseif ($result->failed()) {
+                // Log file not accessible or doesn't exist
+                $errorMessage = $result->errorOutput();
+                
+                // Show user-friendly error in view
+                session()->flash('error', "Unable to read log file: " . basename($logFile) . ". " . 
+                    (str_contains($errorMessage, 'No such file') ? 'File does not exist.' : 'Permission denied or file not accessible.'));
             }
         }
 
@@ -67,8 +74,21 @@ class LogViewerController extends Controller
     {
         $logFile = storage_path('logs/laravel.log');
         
-        if (file_exists($logFile)) {
-            File::put($logFile, '');
+        try {
+            // Try to check if file exists (may fail with open_basedir restrictions)
+            if (file_exists($logFile)) {
+                File::put($logFile, '');
+            } else {
+                // File doesn't exist, create it empty
+                File::put($logFile, '');
+            }
+        } catch (\Exception $e) {
+            // If open_basedir restriction, try to clear anyway via Process
+            $result = Process::run("sudo truncate -s 0 {$logFile}");
+            
+            if ($result->failed()) {
+                return back()->with('error', 'Unable to clear log file: ' . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'Laravel log cleared successfully');
