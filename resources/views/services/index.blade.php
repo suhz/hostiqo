@@ -50,11 +50,11 @@
                                 </div>
                                 <div>
                                     @if($service['is_active'])
-                                        <span class="badge bg-success-subtle">
+                                        <span class="badge badge-pastel-green">
                                             <i class="bi bi-check-circle me-1"></i> Running
                                         </span>
                                     @else
-                                        <span class="badge bg-danger-subtle">
+                                        <span class="badge badge-pastel-red">
                                             <i class="bi bi-x-circle me-1"></i> Stopped
                                         </span>
                                     @endif
