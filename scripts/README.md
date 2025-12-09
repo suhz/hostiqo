@@ -22,6 +22,9 @@ Installs all system prerequisites and dependencies.
 
 **Usage:**
 ```bash
+cd /tmp
+git clone https://github.com/hymns/webhook-manager.git setup
+cd setup
 sudo bash scripts/setup-1-ubuntu.sh
 ```
 
@@ -44,6 +47,7 @@ Configures passwordless sudo permissions for required commands.
 
 **Usage:**
 ```bash
+# From /tmp/setup directory
 # For www-data user (default)
 sudo bash scripts/setup-2-sudoers.sh
 
@@ -74,11 +78,15 @@ Sets up the Laravel application and its dependencies.
 
 **Usage:**
 ```bash
+# Got to web directory
+cd /var/www
+git clone https://github.com/hymns/webhook-manager.git webhook-manager
+
+# Go to project directory
+cd webhook-manager
+
 # Run as www-data user (recommended)
 sudo -u www-data bash scripts/setup-3-app.sh
-
-# Or from project directory
-bash scripts/setup-3-app.sh
 ```
 
 **Requirements:** Must be run from application directory
@@ -98,7 +106,7 @@ Automates web server configuration, SSL setup, and service startup.
 
 **Usage:**
 ```bash
-cd /var/www/webhook-manager
+# From project directory /var/www/webhook-manager
 sudo bash scripts/setup-4-webserver.sh
 ```
 

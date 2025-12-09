@@ -81,15 +81,38 @@ print_success "Directories created"
 
 # Set permissions
 print_info "Setting directory permissions..."
-chmod -R 755 "$APP_DIR/storage"
-chmod -R 755 "$APP_DIR/bootstrap/cache"
+
+# Try with sudo first if available and we're not already root
+if [ "$EUID" -ne 0 ] && command -v sudo &> /dev/null; then
+    sudo chmod -R 755 "$APP_DIR/storage" 2>/dev/null || chmod -R 755 "$APP_DIR/storage" 2>/dev/null || true
+    sudo chmod -R 755 "$APP_DIR/bootstrap/cache" 2>/dev/null || chmod -R 755 "$APP_DIR/bootstrap/cache" 2>/dev/null || true
+else
+    # Skip errors for files we don't own (e.g., Supervisor log files)
+    chmod -R 755 "$APP_DIR/storage" 2>/dev/null || true
+    chmod -R 755 "$APP_DIR/bootstrap/cache" 2>/dev/null || true
+fi
+
+# Ensure www-data owns the directories (if running with sudo)
+if [ "$EUID" -eq 0 ] || command -v sudo &> /dev/null; then
+    sudo chown -R www-data:www-data "$APP_DIR/storage" 2>/dev/null || true
+    sudo chown -R www-data:www-data "$APP_DIR/bootstrap/cache" 2>/dev/null || true
+fi
+
 print_success "Permissions set"
 
 # Database Setup
 print_header "Database Configuration"
 echo ""
-read -p "Setup database automatically? (y/n, default: y): " SETUP_DB
-SETUP_DB=${SETUP_DB:-y}
+
+# Check if database is already configured
+if grep -q "^DB_DATABASE=.\+" "$APP_DIR/.env" && ! grep -q "^DB_DATABASE=$" "$APP_DIR/.env"; then
+    print_info "Database already configured in .env"
+    read -p "Reconfigure database? (y/n, default: n): " SETUP_DB
+    SETUP_DB=${SETUP_DB:-n}
+else
+    read -p "Setup database automatically? (y/n, default: y): " SETUP_DB
+    SETUP_DB=${SETUP_DB:-y}
+fi
 
 if [[ "$SETUP_DB" =~ ^[Yy]$ ]]; then
     print_info "Database setup - please provide details:"
@@ -175,8 +198,20 @@ echo ""
 
 # Check if database is configured
 if grep -q "DB_DATABASE=webhook_manager" "$APP_DIR/.env"; then
-    read -p "Run migrations now? (y/n, default: y): " RUN_MIGRATIONS
-    RUN_MIGRATIONS=${RUN_MIGRATIONS:-y}
+    print_info "Database configured successfully!"
+    echo ""
+    
+    # Check if migrations have been run
+    MIGRATION_STATUS=$(php artisan migrate:status 2>/dev/null | grep -c "Ran" || echo "0")
+    
+    if [ "$MIGRATION_STATUS" -gt 0 ]; then
+        print_info "Migrations already run ($MIGRATION_STATUS migration(s))"
+        read -p "Run migrations again? (y/n, default: n): " RUN_MIGRATIONS
+        RUN_MIGRATIONS=${RUN_MIGRATIONS:-n}
+    else
+        read -p "Run migrations now? (y/n, default: y): " RUN_MIGRATIONS
+        RUN_MIGRATIONS=${RUN_MIGRATIONS:-y}
+    fi
     
     if [[ "$RUN_MIGRATIONS" =~ ^[Yy]$ ]]; then
         print_info "Running database migrations..."
@@ -185,8 +220,18 @@ if grep -q "DB_DATABASE=webhook_manager" "$APP_DIR/.env"; then
             
             # Create admin user
             echo ""
-            read -p "Create admin user now? (y/n, default: y): " CREATE_ADMIN
-            CREATE_ADMIN=${CREATE_ADMIN:-y}
+            
+            # Check if any users exist
+            USER_COUNT=$(php artisan tinker --execute="echo App\Models\User::count();" 2>/dev/null | tail -n 1 | tr -d '[:space:]')
+            
+            if [ "$USER_COUNT" -gt 0 ]; then
+                print_info "Users already exist in database ($USER_COUNT user(s))"
+                read -p "Create another admin user? (y/n, default: n): " CREATE_ADMIN
+                CREATE_ADMIN=${CREATE_ADMIN:-n}
+            else
+                read -p "Create admin user now? (y/n, default: y): " CREATE_ADMIN
+                CREATE_ADMIN=${CREATE_ADMIN:-y}
+            fi
             
             if [[ "$CREATE_ADMIN" =~ ^[Yy]$ ]]; then
                 print_info "Admin user creation:"
@@ -207,16 +252,17 @@ if grep -q "DB_DATABASE=webhook_manager" "$APP_DIR/.env"; then
                     else
                         print_info "Creating admin user..."
                         
-                        php artisan tinker << TINKER_SCRIPT > /dev/null 2>&1
-\$user = new App\Models\User();
-\$user->name = '$ADMIN_NAME';
-\$user->email = '$ADMIN_EMAIL';
-\$user->password = Hash::make('$ADMIN_PASS');
-\$user->save();
-exit
-TINKER_SCRIPT
+                        # Use direct PHP artisan command instead of tinker
+                        OUTPUT=$(php artisan tinker --execute="
+                            \$user = new App\Models\User();
+                            \$user->name = '$ADMIN_NAME';
+                            \$user->email = '$ADMIN_EMAIL';
+                            \$user->password = Hash::make('$ADMIN_PASS');
+                            \$user->save();
+                            echo 'User created: ' . \$user->email;
+                        " 2>&1)
                         
-                        if [ $? -eq 0 ]; then
+                        if [ $? -eq 0 ] && [[ "$OUTPUT" == *"User created"* ]]; then
                             print_success "Admin user created successfully!"
                             echo ""
                             print_info "Admin credentials:"
@@ -224,7 +270,13 @@ TINKER_SCRIPT
                             echo "  Password: [hidden]"
                         else
                             print_error "Failed to create admin user"
-                            print_info "Create manually: php artisan tinker"
+                            echo ""
+                            print_info "Error output:"
+                            echo "$OUTPUT"
+                            echo ""
+                            print_info "You can create manually with:"
+                            echo "  php artisan tinker"
+                            echo "  >>> \$user = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('password')]);"
                         fi
                     fi
                 fi
