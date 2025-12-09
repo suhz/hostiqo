@@ -4,11 +4,7 @@
 
 @section('content')
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1"><i class="bi bi-gear-fill me-2"></i> Service Manager</h2>
-            <p class="text-muted mb-0">Manage system services - start, stop, restart, and reload</p>
-        </div>
+    <div class="d-flex justify-content-end align-items-center mb-4">
         <button class="btn btn-outline-primary" onclick="location.reload()">
             <i class="bi bi-arrow-clockwise me-2"></i> Refresh
         </button>
@@ -54,11 +50,11 @@
                                 </div>
                                 <div>
                                     @if($service['is_active'])
-                                        <span class="badge bg-success">
+                                        <span class="badge bg-success-subtle">
                                             <i class="bi bi-check-circle me-1"></i> Running
                                         </span>
                                     @else
-                                        <span class="badge bg-danger">
+                                        <span class="badge bg-danger-subtle">
                                             <i class="bi bi-x-circle me-1"></i> Stopped
                                         </span>
                                     @endif
@@ -106,21 +102,21 @@
                             <!-- Action Buttons -->
                             <div class="btn-group w-100 mb-2" role="group">
                                 @if($service['is_active'])
-                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="stopService('{{ $key }}', '{{ $service['name'] }}')">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="stopService('{{ $key }}', '{{ $service['name'] }}')">
                                         <i class="bi bi-stop-circle"></i> Stop
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="startService('{{ $key }}', '{{ $service['name'] }}')">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="startService('{{ $key }}', '{{ $service['name'] }}')">
                                         <i class="bi bi-play-circle"></i> Start
                                     </button>
                                 @endif
                                 
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="restartService('{{ $key }}', '{{ $service['name'] }}')">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="restartService('{{ $key }}', '{{ $service['name'] }}')">
                                     <i class="bi bi-arrow-clockwise"></i> Restart
                                 </button>
                                 
                                 @if($service['supports_reload'])
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="reloadService('{{ $key }}', '{{ $service['name'] }}')">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="reloadService('{{ $key }}', '{{ $service['name'] }}')">
                                         <i class="bi bi-arrow-repeat"></i> Reload
                                     </button>
                                 @endif
@@ -151,11 +147,11 @@
     width: 50px;
     height: 50px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #e8f0ffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: #6b7280;
     font-size: 1.5rem;
 }
 
