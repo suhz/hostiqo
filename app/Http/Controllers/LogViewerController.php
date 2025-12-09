@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Website;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -15,9 +16,19 @@ class LogViewerController extends Controller
     {
         $logType = $request->get('type', 'laravel');
         $search = $request->get('search');
+        $websiteId = $request->get('website_id');
 
         $logs = [];
         $logFile = null;
+        $website = null;
+        
+        // Get website if ID provided
+        if ($websiteId) {
+            $website = Website::find($websiteId);
+        }
+        
+        // Get all websites for dropdown
+        $websites = Website::orderBy('name')->get();
 
         switch ($logType) {
             case 'laravel':
@@ -40,6 +51,30 @@ class LogViewerController extends Controller
                 break;
             case 'system':
                 $logFile = '/var/log/syslog';
+                break;
+            
+            // Website-specific logs
+            case 'website-nginx-access':
+                if ($website) {
+                    $logFile = "/var/log/nginx/{$website->domain}-access.log";
+                }
+                break;
+            case 'website-nginx-error':
+                if ($website) {
+                    $logFile = "/var/log/nginx/{$website->domain}-error.log";
+                }
+                break;
+            case 'website-php-access':
+                if ($website && $website->project_type === 'php') {
+                    $poolName = $website->php_pool_name ?? str_replace(['.', '-'], '_', $website->domain);
+                    $logFile = "/var/log/php{$website->php_version}-fpm/{$poolName}-access.log";
+                }
+                break;
+            case 'website-php-slow':
+                if ($website && $website->project_type === 'php') {
+                    $poolName = $website->php_pool_name ?? str_replace(['.', '-'], '_', $website->domain);
+                    $logFile = "/var/log/php{$website->php_version}-fpm/{$poolName}-slow.log";
+                }
                 break;
         }
 
@@ -76,7 +111,7 @@ class LogViewerController extends Controller
             }
         }
 
-        return view('logs.index', compact('logs', 'logType', 'search'));
+        return view('logs.index', compact('logs', 'logType', 'search', 'websites', 'website'));
     }
 
     /**
