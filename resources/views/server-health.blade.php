@@ -21,7 +21,7 @@
                                 <i class="bi bi-cpu"></i>
                             </div>
                         </div>
-                        <div class="progress" style="height: 8px;">
+                        <div class="progress mt-2" style="height: 8px;">
                             <div class="progress-bar bg-{{ $latestMetric->cpu_usage > 80 ? 'danger' : ($latestMetric->cpu_usage > 60 ? 'warning' : 'success') }}" 
                                  role="progressbar" 
                                  style="width: {{ min($latestMetric->cpu_usage, 100) }}%;" 
@@ -49,7 +49,7 @@
                                 <i class="bi bi-memory"></i>
                             </div>
                         </div>
-                        <div class="progress" style="height: 8px;">
+                        <div class="progress mt-2" style="height: 8px;">
                             <div class="progress-bar bg-{{ $latestMetric->memory_usage > 80 ? 'danger' : ($latestMetric->memory_usage > 60 ? 'warning' : 'success') }}" 
                                  role="progressbar" 
                                  style="width: {{ min($latestMetric->memory_usage, 100) }}%;" 
@@ -77,7 +77,7 @@
                                 <i class="bi bi-hdd"></i>
                             </div>
                         </div>
-                        <div class="progress" style="height: 8px;">
+                        <div class="progress mt-2" style="height: 8px;">
                             <div class="progress-bar bg-{{ $latestMetric->disk_usage > 80 ? 'danger' : ($latestMetric->disk_usage > 60 ? 'warning' : 'success') }}" 
                                  role="progressbar" 
                                  style="width: {{ min($latestMetric->disk_usage, 100) }}%;" 

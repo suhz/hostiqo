@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #########################################################
-# Git Webhook Manager - Ubuntu Setup Script
+# Webhook Manager - Ubuntu Setup Script
 # Automates installation of all prerequisites
 #########################################################
 
@@ -34,7 +34,7 @@ check_root() {
 }
 
 # Main setup
-print_info "Starting Git Webhook Manager prerequisite installation..."
+print_info "Starting Webhook Manager prerequisite installation..."
 echo ""
 
 # Check if running as root
@@ -42,27 +42,27 @@ check_root
 
 # Update system
 print_info "Updating system packages..."
-apt-get update -y
-apt-get upgrade -y
+apt-get update -y > /dev/null 2>&1
+apt-get upgrade -y > /dev/null 2>&1
 print_success "System updated"
 
 # Install basic dependencies
 print_info "Installing basic dependencies..."
 apt-get install -y software-properties-common apt-transport-https ca-certificates \
-    curl wget git unzip build-essential gnupg2 lsb-release
+    curl wget git unzip build-essential gnupg2 lsb-release > /dev/null 2>&1
 print_success "Basic dependencies installed"
 
 # Install Nginx
 print_info "Installing Nginx..."
-apt-get install -y nginx
-systemctl enable nginx
-systemctl start nginx
+apt-get install -y nginx > /dev/null 2>&1
+systemctl enable nginx > /dev/null 2>&1
+systemctl start nginx > /dev/null 2>&1
 print_success "Nginx installed and started"
 
 # Add PHP repository
 print_info "Adding PHP repository..."
-add-apt-repository -y ppa:ondrej/php
-apt-get update -y
+add-apt-repository -y ppa:ondrej/php > /dev/null 2>&1
+apt-get update -y > /dev/null 2>&1
 print_success "PHP repository added"
 
 # Install multiple PHP versions
@@ -83,58 +83,60 @@ for version in 7.4 8.0 8.1 8.2 8.3 8.4; do
         php${version}-xml \
         php${version}-bcmath \
         php${version}-intl \
-        php${version}-redis
-    systemctl enable php${version}-fpm
-    systemctl start php${version}-fpm
+        php${version}-redis > /dev/null 2>&1
+    systemctl enable php${version}-fpm > /dev/null 2>&1
+    systemctl start php${version}-fpm > /dev/null 2>&1
     print_success "PHP $version installed"
 done
 
 # Install Composer
 print_info "Installing Composer..."
-curl -sS https://getcomposer.org/installer | php
+curl -sS https://getcomposer.org/installer | php > /dev/null 2>&1
 mv composer.phar /usr/local/bin/composer
 chmod +x /usr/local/bin/composer
 print_success "Composer installed"
 
 # Install Node.js from NodeSource repository
 print_info "Adding NodeSource repository for Node.js 20..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
 print_success "NodeSource repository added"
 
 print_info "Installing Node.js 20..."
-apt-get install -y nodejs
-print_success "Node.js $(node -v) and npm $(npm -v) installed"
+apt-get install -y nodejs > /dev/null 2>&1
+NODE_VERSION=$(node -v 2>/dev/null)
+NPM_VERSION=$(npm -v 2>/dev/null)
+print_success "Node.js $NODE_VERSION and npm $NPM_VERSION installed"
 
 # Install PM2 globally
 print_info "Installing PM2..."
-npm install -g pm2
-pm2 startup systemd
+npm install -g pm2 > /dev/null 2>&1
+pm2 startup systemd > /dev/null 2>&1
 print_success "PM2 installed"
 
 # Install Redis
 print_info "Installing Redis..."
-apt-get install -y redis-server
-systemctl enable redis-server
-systemctl start redis-server
+apt-get install -y redis-server > /dev/null 2>&1
+systemctl enable redis-server > /dev/null 2>&1
+systemctl start redis-server > /dev/null 2>&1
 print_success "Redis installed and started"
 
 # Install MySQL
 print_info "Installing MySQL..."
-apt-get install -y mysql-server
-systemctl enable mysql
-systemctl start mysql
+apt-get install -y mysql-server > /dev/null 2>&1
+systemctl enable mysql > /dev/null 2>&1
+systemctl start mysql > /dev/null 2>&1
 print_success "MySQL installed and started"
 
 # Install Certbot for SSL
 print_info "Installing Certbot..."
-apt-get install -y certbot python3-certbot-nginx
+apt-get install -y certbot python3-certbot-nginx > /dev/null 2>&1
 print_success "Certbot installed"
 
 # Install Supervisor for process management
 print_info "Installing Supervisor..."
-apt-get install -y supervisor
-systemctl enable supervisor
-systemctl start supervisor
+apt-get install -y supervisor > /dev/null 2>&1
+systemctl enable supervisor > /dev/null 2>&1
+systemctl start supervisor > /dev/null 2>&1
 print_success "Supervisor installed and started"
 
 # Create web directories

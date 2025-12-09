@@ -9,7 +9,7 @@
     <div class="row mb-4" style="row-gap: 1rem;">
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Total Webhooks</p>
@@ -25,7 +25,7 @@
         
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Active Webhooks</p>
@@ -41,7 +41,7 @@
         
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Total Deployments</p>
@@ -57,7 +57,7 @@
         
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Last 24h</p>
@@ -76,7 +76,7 @@
     <div class="row mb-4" style="row-gap: 1rem;">
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">PHP Websites</p>
@@ -92,7 +92,7 @@
 
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Node.js Websites</p>
@@ -108,7 +108,7 @@
 
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Databases</p>
@@ -124,7 +124,7 @@
 
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card">
-                <div class="card-body">
+                <div class="card-body mb-2">
                     <div class="d-flex" style="flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important;">
                         <div>
                             <p class="text-muted mb-1">Pending Queues</p>

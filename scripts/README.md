@@ -360,8 +360,8 @@ The certificate will auto-renew via cron. Check with: `sudo certbot renew --dry-
 ```bash
 sudo supervisorctl reread
 sudo supervisorctl update
-sudo supervisorctl start git-webhook-queue:*
-sudo supervisorctl start git-webhook-scheduler:*
+sudo supervisorctl start webhook-manager-queue:*
+sudo supervisorctl start webhook-manager-scheduler:*
 ```
 
 **18. Verify all services are running**
@@ -371,9 +371,9 @@ sudo supervisorctl status
 
 Expected output:
 ```
-git-webhook-queue:git-webhook-queue_00   RUNNING
-git-webhook-queue:git-webhook-queue_01   RUNNING
-git-webhook-scheduler:git-webhook-scheduler RUNNING
+webhook-manager-queue:webhook-manager-queue_00   RUNNING
+webhook-manager-queue:webhook-manager-queue_01   RUNNING
+webhook-manager-scheduler:webhook-manager-scheduler RUNNING
 ```
 
 ---
@@ -418,7 +418,7 @@ sudo -u www-data php artisan view:clear
 sudo -u www-data php artisan cache:clear
 
 # Restart queue workers
-sudo supervisorctl restart git-webhook-queue:*
+sudo supervisorctl restart webhook-manager-queue:*
 
 # Reload nginx (if config changed)
 sudo systemctl reload nginx
@@ -561,7 +561,7 @@ sudo supervisorctl status
 tail -f storage/logs/queue-worker.log
 
 # Restart manually
-sudo supervisorctl restart git-webhook-queue:*
+sudo supervisorctl restart webhook-manager-queue:*
 ```
 
 ---
@@ -609,7 +609,7 @@ All configuration files are created in:
 - **PHP-FPM Pools:** `/etc/php/*/fpm/pool.d/`
 - **PM2 Configs:** `/etc/pm2/`
 - **Supervisor:** `/etc/supervisor/conf.d/`
-- **Sudoers:** `/etc/sudoers.d/git-webhook-manager`
+- **Sudoers:** `/etc/sudoers.d/webhook-manager-manager`
 
 ---
 
@@ -627,7 +627,7 @@ All created files and directories follow the principle of least privilege:
 ### Review Permissions
 After installation, review the sudoers file:
 ```bash
-sudo cat /etc/sudoers.d/git-webhook-manager
+sudo cat /etc/sudoers.d/webhook-manager-manager
 ```
 
 ---

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #########################################################
-# Git Webhook Manager - Application Setup Script
+# Webhook Manager - Application Setup Script
 # Sets up Laravel application and services
 #########################################################
 
@@ -36,7 +36,7 @@ print_header() {
 # Get application directory
 APP_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-print_header "Git Webhook Manager - Application Setup"
+print_header "Webhook Manager - Application Setup"
 echo ""
 print_info "Application directory: $APP_DIR"
 echo ""
@@ -53,13 +53,13 @@ fi
 # Install Composer dependencies
 print_info "Installing Composer dependencies..."
 cd "$APP_DIR"
-composer install --no-interaction --prefer-dist --optimize-autoloader
+composer install --no-interaction --prefer-dist --optimize-autoloader --quiet
 print_success "Composer dependencies installed"
 
 # Generate application key if not set
 if ! grep -q "APP_KEY=base64:" "$APP_DIR/.env"; then
     print_info "Generating application key..."
-    php artisan key:generate --force
+    php artisan key:generate --force > /dev/null 2>&1
     print_success "Application key generated"
 else
     print_info "Application key already set"
@@ -90,7 +90,7 @@ print_info "Running database migrations..."
 read -p "Run migrations now? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    php artisan migrate --force
+    php artisan migrate --force > /dev/null 2>&1
     print_success "Migrations completed"
 else
     print_info "Skipped migrations - run manually with: php artisan migrate"
@@ -99,24 +99,24 @@ fi
 # Build frontend assets
 if [ -f "$APP_DIR/package.json" ]; then
     print_info "Installing npm dependencies..."
-    npm install
+    npm install --silent > /dev/null 2>&1
     print_success "NPM dependencies installed"
     
     print_info "Building frontend assets..."
-    npm run build
+    npm run build > /dev/null 2>&1
     print_success "Frontend assets built"
 fi
 
 # Create symbolic link for storage
 print_info "Creating storage symbolic link..."
-php artisan storage:link
+php artisan storage:link > /dev/null 2>&1
 print_success "Storage link created"
 
 # Clear and cache config
 print_info "Optimizing application..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan config:cache > /dev/null 2>&1
+php artisan route:cache > /dev/null 2>&1
+php artisan view:cache > /dev/null 2>&1
 print_success "Application optimized"
 
 # Setup Supervisor configs
@@ -125,8 +125,8 @@ echo ""
 print_info "Creating Supervisor configurations..."
 
 # Queue worker config
-cat > /tmp/git-webhook-queue.conf << 'EOF'
-[program:git-webhook-queue]
+cat > /tmp/webhook-manager-queue.conf << 'EOF'
+[program:webhook-manager-queue]
 process_name=%(program_name)s_%(process_num)02d
 command=php APPDIR/artisan queue:work --sleep=3 --tries=3 --max-time=3600
 autostart=true
@@ -141,8 +141,8 @@ stopwaitsecs=3600
 EOF
 
 # Scheduler config
-cat > /tmp/git-webhook-scheduler.conf << 'EOF'
-[program:git-webhook-scheduler]
+cat > /tmp/webhook-manager-scheduler.conf << 'EOF'
+[program:webhook-manager-scheduler]
 process_name=%(program_name)s
 command=php APPDIR/artisan schedule:work
 autostart=true
@@ -157,23 +157,23 @@ EOF
 # Replace APPDIR placeholder (cross-platform compatible)
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    sed -i '' "s|APPDIR|$APP_DIR|g" /tmp/git-webhook-queue.conf
-    sed -i '' "s|APPDIR|$APP_DIR|g" /tmp/git-webhook-scheduler.conf
+    sed -i '' "s|APPDIR|$APP_DIR|g" /tmp/webhook-manager-queue.conf
+    sed -i '' "s|APPDIR|$APP_DIR|g" /tmp/webhook-manager-scheduler.conf
 else
     # Linux
-    sed -i "s|APPDIR|$APP_DIR|g" /tmp/git-webhook-queue.conf
-    sed -i "s|APPDIR|$APP_DIR|g" /tmp/git-webhook-scheduler.conf
+    sed -i "s|APPDIR|$APP_DIR|g" /tmp/webhook-manager-queue.conf
+    sed -i "s|APPDIR|$APP_DIR|g" /tmp/webhook-manager-scheduler.conf
 fi
 
 # Install supervisor configs if supervisor is installed
 if command -v supervisorctl &> /dev/null; then
     print_info "Installing Supervisor configs..."
-    sudo cp /tmp/git-webhook-queue.conf /etc/supervisor/conf.d/
-    sudo cp /tmp/git-webhook-scheduler.conf /etc/supervisor/conf.d/
-    sudo supervisorctl reread
-    sudo supervisorctl update
-    sudo supervisorctl start git-webhook-queue:*
-    sudo supervisorctl start git-webhook-scheduler:*
+    sudo cp /tmp/webhook-manager-queue.conf /etc/supervisor/conf.d/ > /dev/null 2>&1
+    sudo cp /tmp/webhook-manager-scheduler.conf /etc/supervisor/conf.d/ > /dev/null 2>&1
+    sudo supervisorctl reread > /dev/null 2>&1
+    sudo supervisorctl update > /dev/null 2>&1
+    sudo supervisorctl start webhook-manager-queue:* > /dev/null 2>&1
+    sudo supervisorctl start webhook-manager-scheduler:* > /dev/null 2>&1
     print_success "Supervisor configs installed and started"
 else
     print_info "Supervisor not installed - configs saved to /tmp/"

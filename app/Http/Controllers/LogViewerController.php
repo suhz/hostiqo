@@ -28,6 +28,9 @@ class LogViewerController extends Controller
             case 'nginx-error':
                 $logFile = '/var/log/nginx/error.log';
                 break;
+            case 'php-fpm':
+                $logFile = '/var/log/php-fpm.log';
+                break;
             case 'system':
                 $logFile = '/var/log/syslog';
                 break;

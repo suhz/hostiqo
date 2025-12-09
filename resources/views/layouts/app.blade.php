@@ -33,44 +33,65 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <div class="brand">
-            <i class="bi bi-git"></i> GitWebhook
+        <div class="sidebar-content">
+            <div class="brand">
+                <i class="bi bi-git"></i> GitWebhook
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </a>
+
+                <!-- Application Section -->
+                <div class="nav-section-title">
+                    Applications
+                </div>
+
+                <a class="nav-link {{ request()->routeIs('websites.*') ? 'active' : '' }}" href="{{ route('websites.index') }}">
+                    <i class="bi bi-globe me-2"></i> Websites
+                </a>
+                <a class="nav-link {{ request()->routeIs('databases.*') ? 'active' : '' }}" href="{{ route('databases.index') }}">
+                    <i class="bi bi-database me-2"></i> Databases
+                </a>
+                <a class="nav-link {{ request()->routeIs('webhooks.*') ? 'active' : '' }}" href="{{ route('webhooks.index') }}">
+                    <i class="bi bi-hdd-network me-2"></i> Webhooks
+                </a>
+                <a class="nav-link {{ request()->routeIs('deployments.*') ? 'active' : '' }}" href="{{ route('deployments.index') }}">
+                    <i class="bi bi-cloud-haze2 me-2"></i> Deployments
+                </a>
+
+                <!-- Server Tools Section -->
+                <div class="nav-section-title">
+                    Server Tools
+                </div>
+                <a class="nav-link {{ request()->routeIs('firewall.*') ? 'active' : '' }}" href="{{ route('firewall.index') }}">
+                    <i class="bi bi-shield-check me-2"></i> Firewall
+                </a>
+                <a class="nav-link {{ request()->routeIs('server-health') ? 'active' : '' }}" href="{{ route('server-health') }}">
+                    <i class="bi bi-heart-pulse me-2"></i> Server Health
+                </a>
+                <a class="nav-link {{ request()->routeIs('cron-jobs.*') ? 'active' : '' }}" href="{{ route('cron-jobs.index') }}">
+                    <i class="bi bi-clock-history me-2"></i> Cron Jobs
+                </a>
+
+                <!-- Operation Section -->
+                <div class="nav-section-title">
+                    Operations
+                </div>
+                <a class="nav-link {{ request()->routeIs('queues.*') ? 'active' : '' }}" href="{{ route('queues.index') }}">
+                    <i class="bi bi-calendar2-check me-2"></i> Queues
+                </a>
+                <a class="nav-link {{ request()->routeIs('alerts.*') ? 'active' : '' }}" href="{{ route('alerts.index') }}">
+                    <i class="bi bi-bell me-2"></i> Alerts
+                </a>
+                <a class="nav-link {{ request()->routeIs('logs.*') ? 'active' : '' }}" href="{{ route('logs.index') }}">
+                    <i class="bi bi-file-text me-2"></i> Logs
+                </a>
+                <a class="nav-link {{ request()->routeIs('files.*') ? 'active' : '' }}" href="{{ route('files.index') }}">
+                    <i class="bi bi-folder me-2"></i> File Manager
+                </a>
+            </nav>
         </div>
-        <nav class="nav flex-column">
-            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                <i class="bi bi-speedometer2 me-2"></i> Dashboard
-            </a>
-            <a class="nav-link {{ request()->routeIs('server-health') ? 'active' : '' }}" href="{{ route('server-health') }}">
-                <i class="bi bi-heart-pulse me-2"></i> Server Health
-            </a>
-            <a class="nav-link {{ request()->routeIs('websites.*') ? 'active' : '' }}" href="{{ route('websites.index') }}">
-                <i class="bi bi-globe me-2"></i> Websites
-            </a>
-            <a class="nav-link {{ request()->routeIs('databases.*') ? 'active' : '' }}" href="{{ route('databases.index') }}">
-                <i class="bi bi-database me-2"></i> Databases
-            </a>
-            <a class="nav-link {{ request()->routeIs('webhooks.*') ? 'active' : '' }}" href="{{ route('webhooks.index') }}">
-                <i class="bi bi-hdd-network me-2"></i> Webhooks
-            </a>
-            <a class="nav-link {{ request()->routeIs('deployments.*') ? 'active' : '' }}" href="{{ route('deployments.index') }}">
-                <i class="bi bi-cloud-haze2 me-2"></i> Deployments
-            </a>
-            <a class="nav-link {{ request()->routeIs('queues.*') ? 'active' : '' }}" href="{{ route('queues.index') }}">
-                <i class="bi bi-calendar2-check me-2"></i> Queues
-            </a>
-            <a class="nav-link {{ request()->routeIs('firewall.*') ? 'active' : '' }}" href="{{ route('firewall.index') }}">
-                <i class="bi bi-shield-check me-2"></i> Firewall
-            </a>
-            <a class="nav-link {{ request()->routeIs('cron-jobs.*') ? 'active' : '' }}" href="{{ route('cron-jobs.index') }}">
-                <i class="bi bi-clock-history me-2"></i> Cron Jobs
-            </a>
-            <a class="nav-link {{ request()->routeIs('alerts.*') ? 'active' : '' }}" href="{{ route('alerts.index') }}">
-                <i class="bi bi-bell me-2"></i> Alerts
-            </a>
-            <a class="nav-link {{ request()->routeIs('logs.*') ? 'active' : '' }}" href="{{ route('logs.index') }}">
-                <i class="bi bi-file-text me-2"></i> Logs
-            </a>
-        </nav>
         
         <!-- User Info -->
         <div class="user-info">

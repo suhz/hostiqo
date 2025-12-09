@@ -15,14 +15,13 @@
         <div class="col-lg-8">
             <!-- Basic Information -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Basic Information</h5>
-                </div>
                 <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-globe"></i> Basic Information</h5>
+                    <hr class="mt-0 mb-3">
                     
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Name:</strong>
+                            Name
                         </div>
                         <div class="col-md-8">
                             {{ $website->name }}
@@ -31,7 +30,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Domain:</strong>
+                            Domain
                         </div>
                         <div class="col-md-8">
                             <code>{{ $website->domain }}</code>
@@ -40,10 +39,10 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Project Type:</strong>
+                            Project Type
                         </div>
                         <div class="col-md-8">
-                            <span class="badge bg-{{ $website->project_type_badge }}">
+                            <span class="badge badge-pastel-{{ $website->project_type == "php" ? 'purple' : 'green'; }}">
                                 {{ $website->project_type === 'php' ? 'PHP' : 'Node.js' }}
                             </span>
                         </div>
@@ -51,7 +50,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Version:</strong>
+                            Version
                         </div>
                         <div class="col-md-8">
                             {{ $website->version_display }}
@@ -60,10 +59,10 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Status:</strong>
+                            Status
                         </div>
                         <div class="col-md-8">
-                            <span class="badge bg-{{ $website->status_badge }}">
+                            <span class="badge badge-pastel-{{ $website->is_active ? 'green' : 'red' }}">
                                 {{ $website->is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>
@@ -71,10 +70,10 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Nginx Status:</strong>
+                            Nginx Status
                         </div>
                         <div class="col-md-8">
-                            <span class="badge bg-{{ $website->nginx_status_badge }}">
+                            <span class="badge badge-pastel-{{ $website->nginx_status == 'active' ? 'green' : 'red' }}">
                                 {{ ucfirst($website->nginx_status) }}
                             </span>
                         </div>
@@ -82,15 +81,15 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>SSL Enabled:</strong>
+                            SSL Enabled
                         </div>
                         <div class="col-md-8">
                             @if($website->ssl_enabled)
-                                <span class="badge bg-success">
+                                <span class="badge badge-paste-green">
                                     <i class="bi bi-shield-check me-1"></i> Yes
                                 </span>
                             @else
-                                <span class="badge bg-secondary">
+                                <span class="badge badge-pastel-black">
                                     <i class="bi bi-shield-x me-1"></i> No
                                 </span>
                             @endif
@@ -99,10 +98,10 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>SSL Status:</strong>
+                            SSL Status
                         </div>
                         <div class="col-md-8">
-                            <span class="badge bg-{{ $website->ssl_status_badge }}">
+                            <span class="badge badge-pastel-{{ $website->ssl_status ? 'green' : 'black' }}">
                                 {{ ucfirst($website->ssl_status) }}
                             </span>
                         </div>
@@ -111,10 +110,10 @@
                     @if(config('services.cloudflare.enabled'))
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <strong>CloudFlare DNS Status:</strong>
+                                CloudFlare DNS Status
                             </div>
                             <div class="col-md-8">
-                                <span class="badge bg-{{ $website->dns_status_badge }}">
+                                <span class="badge badge-pastel-{{ $website->dns_status === 'active' ? 'green' : 'black' }}">
                                     {{ ucfirst($website->dns_status) }}
                                 </span>
                                 @if($website->dns_status === 'active' && $website->server_ip)
@@ -132,7 +131,7 @@
                     @if($website->project_type === 'node')
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <strong>PM2 Status:</strong>
+                                PM2 Status
                             </div>
                             <div class="col-md-8">
                                 <span class="badge bg-{{ $website->pm2_status_badge }}">
@@ -148,20 +147,20 @@
                     <hr class="my-4">
 
                     <!-- Path Configuration -->
-                    <h5 class="card-title mb-4">Path Configuration</h5>
+                    <h5 class="card-title mb-3"><i class="bi bi-terminal"></i> Path Configuration</h5>
 
-                    <div class="row mb-3">
+                    <div class="row mb-2 align-items-center">
                         <div class="col-md-4">
-                            <strong>Root Path:</strong>
+                            Root Path
                         </div>
                         <div class="col-md-8">
                             <code>{{ $website->root_path }}</code>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    <div class="row mb-2 align-items-center">
                         <div class="col-md-4">
-                            <strong>{{ $website->project_type === 'php' ? 'Working Directory:' : 'Run opt:' }}</strong>
+                            {{ $website->project_type === 'php' ? 'Working Directory' : 'Run opt' }}
                         </div>
                         <div class="col-md-8">
                             <code>{{ $website->working_directory ?? $website->root_path }}</code>
@@ -171,7 +170,7 @@
                     @if($website->project_type === 'node' && $website->port)
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <strong>Port:</strong>
+                                Port
                             </div>
                             <div class="col-md-8">
                                 {{ $website->port }}
@@ -183,13 +182,12 @@
 
             <!-- Timestamps -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock me-2"></i>Timestamps</h5>
-                </div>
                 <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-clock-history"></i> Timestamps</h5>
+                    <hr class="mt-0 mb-3">
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Created At:</strong>
+                            Created At
                         </div>
                         <div class="col-md-8">
                             {{ $website->created_at->format('d M Y, h:i A') }}
@@ -198,7 +196,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <strong>Last Updated:</strong>
+                            Last Update
                         </div>
                         <div class="col-md-8">
                             {{ $website->updated_at->format('d M Y, h:i A') }}
@@ -271,48 +269,59 @@
                     <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <form action="{{ route('websites.toggle-ssl', $website) }}" method="POST" class="d-grid">
+                    <!-- Compact Icon Grid -->
+                    <div class="d-flex gap-2 flex-wrap justify-content-center mb-3">
+                        <!-- SSL Button -->
+                        <form action="{{ route('websites.toggle-ssl', $website) }}" method="POST">
                             @csrf
                             @method('POST')
-                            <button type="submit" class="btn btn-{{ $website->ssl_enabled ? 'outline-success' : 'outline-primary' }}">
-                                <i class="bi bi-shield-check me-2"></i> 
-                                {{ $website->ssl_enabled ? 'SSL Enabled' : 'Enable SSL' }}
+                            <button type="submit" class="action-btn {{ $website->ssl_enabled ? 'active' : '' }}" title="{{ $website->ssl_enabled ? 'SSL Enabled' : 'Enable SSL' }}">
+                                <i class="bi bi-shield-check"></i>
+                                @if($website->ssl_enabled)
+                                    <span class="status-badge"></span>
+                                @endif
                             </button>
                         </form>
                         
                         @if(config('services.cloudflare.enabled'))
-                            <form action="{{ route('websites.dns-sync', $website) }}" method="POST" class="d-grid">
-                                @csrf
-                                <button type="submit" class="btn btn-{{ $website->dns_status === 'active' ? 'outline-success' : 'outline-secondary' }}" title="Sync DNS record with Cloudflare">
-                                    <i class="bi bi-hdd-network me-2"></i> 
-                                    {{ $website->dns_status === 'active' ? 'DNS Synced' : 'Sync DNS' }}
-                                </button>
-                            </form>
+                        <!-- DNS Button -->
+                        <form action="{{ route('websites.dns-sync', $website) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="action-btn {{ $website->dns_status === 'active' ? 'active' : '' }}" title="{{ $website->dns_status === 'active' ? 'DNS Synced' : 'Sync DNS' }}">
+                                <i class="bi bi-cloud"></i>
+                            </button>
+                        </form>
                         @endif
 
-                        <form id="redeploy-form" action="{{ route('websites.redeploy', $website) }}" method="POST" class="d-grid">
+                        <!-- Redeploy Button -->
+                        <form id="redeploy-form" action="{{ route('websites.redeploy', $website) }}" method="POST">
                             @csrf
-                            <button type="button" 
-                                    class="btn btn-warning"
+                            <button type="button" class="action-btn warning" title="Redeploy Configuration"
                                     onclick="confirmAction('Redeploy Configuration', 'Regenerate and redeploy Nginx and PHP-FPM configurations for {{ $website->domain }}?', 'Yes, redeploy!', 'question').then(confirmed => { if(confirmed) this.closest('form').submit(); })">
-                                <i class="bi bi-rocket-takeoff-fill me-2"></i> Redeploy Config
+                                <i class="bi bi-rocket-takeoff"></i>
                             </button>
                         </form>
 
-                        <a href="{{ route('websites.edit', $website) }}" class="btn btn-primary">
-                            <i class="bi bi-pencil me-2"></i> Edit Website
+                        <!-- Edit Button -->
+                        <a href="{{ route('websites.edit', $website) }}" class="action-btn primary" title="Edit Website">
+                            <i class="bi bi-pencil"></i>
                         </a>
 
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                            <i class="bi bi-trash me-2"></i> Delete Website
+                        <!-- Delete Button -->
+                        <button type="button" class="action-btn danger" title="Delete Website" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash"></i>
                         </button>
+                    </div>
+
+                    <!-- Action Labels -->
+                    <div class="text-center">
+                        <small class="text-muted" style="font-size: 0.75rem;">Hover for action details</small>
                     </div>
                 </div>
             </div>
 
             <!-- Quick Tips -->
-            <div class="card bg-light">
+            <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Quick Tips</h5>
                 </div>

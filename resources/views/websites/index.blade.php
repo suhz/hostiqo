@@ -31,22 +31,21 @@
             padding: 1.5rem;
         }
         .website-name {
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 600;
-            color: #1a1a1a;
+            color: #3c3c3cff;
             margin: 0;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
         .website-domain {
-            color: #5865f2;
-            font-size: 0.875rem;
+            color: #a5a5a5ff;
+            font-size: 0.75rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            margin-top: 0.25rem;
+            gap: 0.3rem;
         }
         .website-domain:hover {
             text-decoration: underline;
@@ -59,9 +58,22 @@
         }
         .status-dot.active {
             background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-green 2s infinite;
         }
         .status-dot.inactive {
             background: #6b7280;
+        }
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
         }
         .section-label {
             font-size: 0.6875rem;
@@ -79,22 +91,25 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
-            font-size: 0.9375rem;
+            padding: 0.3rem 0;
+            font-size: 0.8125rem;
         }
         .info-label {
             color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         .info-value {
             color: #1a1a1a;
-            font-weight: 500;
+            font-weight: 200;
         }
         .status-badge {
             background: #d1fae5;
             color: #065f46;
             padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
+            border-radius: 4px;
+            font-size: 0.8125rem;
             font-weight: 500;
         }
         .status-badge.pending {
@@ -147,7 +162,7 @@
             width: 40px;
             height: 40px;
             border-radius: 8px;
-            background: #f3f4f6;
+            background: #e8f0ffff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -193,9 +208,8 @@
                                 <i class="bi bi-globe"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="website-name">
-                                    <span class="status-dot {{ $website->is_active ? 'active' : 'inactive' }}"></span>
-                                    {{ $website->name }}
+                                <div class="website-name">                                    
+                                    {{ $website->name }} <span class="status-dot {{ $website->is_active ? 'active' : 'inactive' }}"></span>
                                     @if($website->ssl_status === 'active')
                                         <span class="badge" style="background: #10b981; font-size: 0.75rem;"><i class="bi bi-lock-fill"></i> SSL</span>                                    
                                     @endif
@@ -203,13 +217,14 @@
                                 <a href="http://{{ $website->domain }}" target="_blank" class="website-domain">
                                     {{ $website->domain }}
                                     <i class="bi bi-box-arrow-up-right" style="font-size: 0.75rem;"></i>
+                                    <span class="badge badge-pastel-purple">PHP {{ $website->php_version }}</span>
                                 </a>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="deploy-btn" 
                                     onclick="event.stopPropagation(); redeployWebsite({{ $website->id }})">
-                                <i class="bi bi-rocket-takeoff-fill me-2"></i> Deploy
+                                <i class="bi bi-rocket-takeoff-fill me-2"></i> Redeploy
                             </button>
                             <div class="dropdown" onclick="event.stopPropagation();">
                                 <button class="btn btn-link text-dark p-0" type="button" 
@@ -240,58 +255,61 @@
                         <!-- Configuration Section -->
                         <div class="section-label">CONFIGURATION</div>
                         <div class="info-row">
-                            <span class="info-label">Type</span>
+                            <span class="info-label"><i class="bi bi-code-slash"></i> Type</span>
                             <span class="info-value">{{ $website->project_type === 'php' ? 'PHP' : 'Node.js' }}</span>
                         </div>
                         @if($website->project_type === 'php')
                             <div class="info-row">
-                                <span class="info-label">PHP Version</span>
+                                <span class="info-label"><i class="bi bi-gear"></i> PHP Version</span>
                                 <span class="info-value">{{ $website->php_version ?? 'System Default' }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">FPM Pool</span>
+                                <span class="info-label"><i class="bi bi-layers"></i> FPM Pool</span>
                                 <span class="info-value">{{ $website->php_pool_name ?? 'www' }}</span>
                             </div>
                         @else
                             <div class="info-row">
-                                <span class="info-label">Node Version</span>
+                                <span class="info-label"><i class="bi bi-hexagon"></i> Node Version</span>
                                 <span class="info-value">{{ $website->node_version ?? '18.x' }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">Port</span>
+                                <span class="info-label"><i class="bi bi-ethernet"></i> Port</span>
                                 <span class="info-value">{{ $website->port ?? '3000' }}</span>
                             </div>
                         @endif
                         <div class="info-row">
-                            <span class="info-label">Root Path</span>
+                            <span class="info-label"><i class="bi bi-folder"></i> Root Path</span>
                             <span class="info-value"><code>{{ $website->root_path }}</code></span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Working Directory</span>
+                            <span class="info-label"><i class="bi bi-folder-symlink"></i> Working Directory</span>
                             <span class="info-value"><code>{{ $website->working_directory ?? '/' }}</code></span>
                         </div>
 
                         <!-- Services Section -->
                         <div class="section-label">SERVICES</div>
                         <div class="info-row">
-                            <span class="info-label">Nginx</span>
-                            <span class="status-badge {{ $website->nginx_status === 'active' ? '' : ($website->nginx_status === 'pending' ? 'pending' : 'failed') }}">
+                            <span class="info-label"><i class="bi bi-hexagon"></i> Nginx</span>
+                            <span class="badge badge-md badge-pastel-{{ $website->nginx_status === 'active' ? 'green' : ($website->nginx_status === 'pending' ? 'yellow' : 'red') }}">
                                 {{ ucfirst($website->nginx_status) }}
                             </span>
                         </div>
                         @if($website->ssl_enabled)
                             <div class="info-row">
-                                <span class="info-label">SSL/TLS</span>
-                                <span class="status-badge {{ $website->ssl_status === 'active' ? '' : ($website->ssl_status === 'pending' ? 'pending' : 'failed') }}">
+                                <span class="info-label"><i class="bi bi-shield-lock"></i> SSL/TLS</span>
+                                <span class="badge badge-md badge-pastel-{{ $website->ssl_status === 'active' ? 'green' : ($website->ssl_status === 'pending' ? 'yellow' : 'red') }}">
                                     {{ ucfirst($website->ssl_status) }}
                                 </span>
                             </div>
                         @endif
                         @if(config('services.cloudflare.enabled') && $website->dns_status !== 'none')
                             <div class="info-row">
-                                <span class="info-label">CloudFlare DNS</span>
-                                <span class="status-badge {{ $website->dns_status === 'active' ? '' : ($website->dns_status === 'pending' ? 'pending' : 'failed') }}">
-                                    {{ ucfirst($website->dns_status) }}
+                                <span class="info-label"><i class="bi bi-cloud"></i> CloudFlare DNS</span>
+                                <span class="info-value">
+                                    {{ $website->server_ip }} ← 
+                                    <span class="badge badge-md badge-pastel-{{ $website->dns_status === 'active' ? 'green' : ($website->dns_status === 'pending' ? 'yellow' : 'red') }}">
+                                        {{ ucfirst($website->dns_status) }}
+                                    </span>
                                 </span>
                             </div>
                         @endif
@@ -299,12 +317,12 @@
                         <!-- Deployment Section -->
                         <div class="section-label">DEPLOYMENT</div>
                         <div class="info-row">
-                            <span class="info-label">Last Deploy</span>
+                            <span class="info-label"><i class="bi bi-clock-history"></i> Last Deploy</span>
                             <span class="info-value">{{ $website->updated_at->diffForHumans() }}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Status</span>
-                            <span class="status-badge {{ $website->is_active ? '' : 'failed' }}">
+                            <span class="info-label"><i class="bi bi-activity"></i> Status</span>
+                            <span class="badge badge-md badge-pastel-{{ $website->is_active ? 'green' : 'red' }}">
                                 {{ $website->is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>

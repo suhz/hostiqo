@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #########################################################
-# Git Webhook Manager - Sudoers Configuration Script
+# Webhook Manager - Sudoers Configuration Script
 # Sets up passwordless sudo for required commands
 #########################################################
 
@@ -34,7 +34,7 @@ check_root() {
 }
 
 # Main setup
-print_info "Configuring sudoers for Git Webhook Manager..."
+print_info "Configuring sudoers for Webhook Manager..."
 echo ""
 
 # Check if running as root
@@ -45,12 +45,12 @@ WEB_USER=${1:-www-data}
 print_info "Using web server user: $WEB_USER"
 
 # Create sudoers file
-SUDOERS_FILE="/etc/sudoers.d/git-webhook-manager"
+SUDOERS_FILE="/etc/sudoers.d/webhook-manager-manager"
 
 print_info "Creating sudoers configuration..."
 
 cat > "$SUDOERS_FILE" << EOF
-# Git Webhook Manager - Automated Management Permissions
+# Webhook Manager - Automated Management Permissions
 # Web server user: $WEB_USER
 
 # Nginx Management
@@ -130,7 +130,7 @@ $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/pm2
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/local/bin/pm2
 
 # Supervisor - Process Manager
-$WEB_USER ALL=(ALL) NOPASSWD: /bin/cp /tmp/git-webhook-*.conf /etc/supervisor/conf.d/
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/cp /tmp/webhook-manager-*.conf /etc/supervisor/conf.d/
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl reread
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl update
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl start *
@@ -162,9 +162,9 @@ print_info "Setting up PHP-FPM log files and directories..."
 # Create main PHP-FPM log file
 if [ ! -f "/var/log/php-fpm.log" ]; then
     print_info "Creating /var/log/php-fpm.log..."
-    sudo touch /var/log/php-fpm.log
-    sudo chown www-data:www-data /var/log/php-fpm.log
-    sudo chmod 644 /var/log/php-fpm.log
+    sudo touch /var/log/php-fpm.log > /dev/null 2>&1
+    sudo chown www-data:www-data /var/log/php-fpm.log > /dev/null 2>&1
+    sudo chmod 644 /var/log/php-fpm.log > /dev/null 2>&1
     print_success "Created /var/log/php-fpm.log"
 else
     print_info "/var/log/php-fpm.log already exists"
@@ -176,9 +176,9 @@ for php_version in $(ls -d /etc/php/*/ 2>/dev/null | grep -oP '\d+\.\d+' | sort 
     
     if [ ! -d "$log_dir" ]; then
         print_info "Creating log directory for PHP ${php_version}..."
-        sudo mkdir -p "$log_dir"
-        sudo chown www-data:www-data "$log_dir"
-        sudo chmod 755 "$log_dir"
+        sudo mkdir -p "$log_dir" > /dev/null 2>&1
+        sudo chown www-data:www-data "$log_dir" > /dev/null 2>&1
+        sudo chmod 755 "$log_dir" > /dev/null 2>&1
         print_success "Created $log_dir"
     else
         print_info "Log directory for PHP ${php_version} already exists"

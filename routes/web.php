@@ -7,6 +7,7 @@ use App\Http\Controllers\CronJobController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeploymentController;
+use App\Http\Controllers\FileManagerController;
 use App\Http\Controllers\FirewallController;
 use App\Http\Controllers\LogViewerController;
 use App\Http\Controllers\QueueController;
@@ -119,6 +120,18 @@ Route::middleware('auth')->group(function () {
     // Log Viewer
     Route::get('logs', [LogViewerController::class, 'index'])->name('logs.index');
     Route::post('logs/clear', [LogViewerController::class, 'clear'])->name('logs.clear');
+
+    // File Manager
+    Route::get('files', [FileManagerController::class, 'index'])->name('files.index');
+    Route::get('files/edit', [FileManagerController::class, 'edit'])->name('files.edit');
+    Route::post('files/update', [FileManagerController::class, 'update'])->name('files.update');
+    Route::post('files/delete', [FileManagerController::class, 'destroy'])->name('files.delete');
+    Route::post('files/create-directory', [FileManagerController::class, 'createDirectory'])->name('files.create-directory');
+    Route::post('files/create-file', [FileManagerController::class, 'createFile'])->name('files.create-file');
+    Route::post('files/rename', [FileManagerController::class, 'rename'])->name('files.rename');
+    Route::post('files/chmod', [FileManagerController::class, 'chmod'])->name('files.chmod');
+    Route::post('files/upload', [FileManagerController::class, 'upload'])->name('files.upload');
+    Route::get('files/download', [FileManagerController::class, 'download'])->name('files.download');
 });
 
 // Webhook Handler (API endpoint for Git providers - No Auth Required)

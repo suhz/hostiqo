@@ -23,6 +23,7 @@
                     <option value="laravel" {{ $logType === 'laravel' ? 'selected' : '' }}>Laravel</option>
                     <option value="nginx-access" {{ $logType === 'nginx-access' ? 'selected' : '' }}>Nginx Access</option>
                     <option value="nginx-error" {{ $logType === 'nginx-error' ? 'selected' : '' }}>Nginx Error</option>
+                    <option value="php-fpm" {{ $logType === 'php-fpm' ? 'selected' : '' }}>PHP-FPM</option>
                     <option value="system" {{ $logType === 'system' ? 'selected' : '' }}>System (syslog)</option>
                 </select>
             </div>

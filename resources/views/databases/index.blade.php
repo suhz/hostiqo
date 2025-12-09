@@ -4,12 +4,6 @@
 @section('page-title', 'Database Management')
 @section('page-description', 'Manage MySQL databases and users')
 
-@push('styles')
-<style>
-    details summary { cursor: pointer; }
-</style>
-@endpush
-
 @section('page-actions')
     <div class="btn-group">
         @if($permissions['can_create'])
@@ -69,107 +63,151 @@
         </div>
     @endif
 
-    <div class="card">
-        <div class="card-body">
-            @if($databases->isEmpty())
-                <div class="text-center py-5">
-                    <i class="bi bi-database text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-4">No databases yet</h4>
-                    <p class="text-muted">Create your first database to get started.</p>
-                    @if($permissions['can_create'])
-                        <a href="{{ route('databases.create') }}" class="btn btn-primary mt-3">
-                            <i class="bi bi-plus-circle me-1"></i> Create Your First Database
-                        </a>
-                    @else
-                        <button class="btn btn-primary mt-3" disabled title="Insufficient MySQL privileges">
-                            <i class="bi bi-plus-circle me-1"></i> Create Your First Database
-                        </button>
-                        <p class="text-danger mt-3 small">You don't have sufficient MySQL privileges to create databases.</p>
-                    @endif
-                </div>
-            @else
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Database Name</th>
-                                <th>Username</th>
-                                <th>Host</th>
-                                <th>Status</th>
-                                <th>Size</th>
-                                <th>Tables</th>
-                                <th>Created</th>
-                                <th width="150">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($databases as $database)
-                                <tr>
-                                    <td>
-                                        <strong class="font-monospace">{{ $database->name }}</strong>
-                                        @if($database->description)
-                                            <br><small class="text-muted">{{ Str::limit($database->description, 50) }}</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <code>{{ $database->username }}</code>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ $database->host }}</small>
-                                    </td>
-                                    <td>
-                                        @if($database->exists_in_mysql)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-danger">Not Found</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($database->exists_in_mysql)
-                                            <small class="text-muted">{{ $database->size_mb }} MB</small>
-                                        @else
-                                            <small class="text-muted">-</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($database->exists_in_mysql)
-                                            <span class="badge bg-info">{{ $database->table_count }}</span>
-                                        @else
-                                            <small class="text-muted">-</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ $database->created_at->format('M d, Y') }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('databases.show', $database) }}" class="btn btn-outline-primary" title="View">
-                                                <i class="bi bi-search"></i>
-                                            </a>
-                                            <a href="{{ route('databases.change-password', $database) }}" class="btn btn-outline-primary" title="Change Password">
-                                                <i class="bi bi-lock-fill"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-danger" title="Delete" 
-                                                    onclick="if(confirmDelete('Are you sure you want to delete this database? This action cannot be undone!')) { document.getElementById('delete-form-{{ $database->id }}').submit(); }">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                        <form id="delete-form-{{ $database->id }}" action="{{ route('databases.destroy', $database) }}" method="POST" class="d-none">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+    @if($databases->isEmpty())
+        <div class="database-card">
+            <div class="text-center py-5" style="padding: 3rem 1.5rem;">
+                <i class="bi bi-database text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-4">No databases yet</h4>
+                <p class="text-muted">Create your first database to get started.</p>
+                @if($permissions['can_create'])
+                    <a href="{{ route('databases.create') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-1"></i> Create Your First Database
+                    </a>
+                @else
+                    <button class="btn btn-primary mt-3" disabled title="Insufficient MySQL privileges">
+                        <i class="bi bi-plus-circle me-1"></i> Create Your First Database
+                    </button>
+                    <p class="text-danger mt-3 small">You don't have sufficient MySQL privileges to create databases.</p>
+                @endif
+            </div>
+        </div>
+    @else
+        @foreach($databases as $database)
+            <div class="database-card">
+                <!-- Card Header -->
+                <div class="database-card-header" onclick="toggleCard({{ $database->id }})">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-start gap-3" style="flex: 1;">
+                            <i class="bi bi-chevron-right chevron-icon" id="chevron-{{ $database->id }}" 
+                               style="font-size: 1.25rem; color: #9ca3af; margin-top: 0.25rem;"></i>
+                            <div class="database-icon">
+                                <i class="bi bi-database"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="database-name">
+                                    {{ $database->name }}
+                                    <span class="status-dot {{ $database->exists_in_mysql ? 'active' : 'inactive' }}"></span>
+                                </div>
+                                <div class="database-username">
+                                    {{ $database->host }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="dropdown" onclick="event.stopPropagation();">
+                                <button class="btn btn-link text-dark p-0" type="button" 
+                                        data-bs-toggle="dropdown" style="font-size: 1.25rem;">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{{ route('databases.show', $database) }}">
+                                        <i class="bi bi-search me-2"></i>View Details
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('databases.change-password', $database) }}">
+                                        <i class="bi bi-lock-fill me-2"></i>Change Password
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" 
+                                           onclick="event.preventDefault(); if(confirm('Delete {{ $database->name }}? This action cannot be undone!')) document.getElementById('delete-form-{{ $database->id }}').submit();">
+                                        <i class="bi bi-trash me-2"></i>Delete
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Pagination -->
-                <div class="mt-4">
-                    {{ $databases->links() }}
+                <!-- Card Body (Collapsible) -->
+                <div id="card-body-{{ $database->id }}" style="display: none;">
+                    <div class="database-card-body">
+                        <!-- Database Information -->
+                        <div class="section-label">DATABASE INFORMATION</div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-server"></i> Database Name</span>
+                            <span class="info-value"><code>{{ $database->name }}</code></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-person"></i> Username</span>
+                            <span class="info-value"><code>{{ $database->username }}</code></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-hdd-network"></i> Host</span>
+                            <span class="info-value">{{ $database->host }}</span>
+                        </div>
+                        @if($database->description)
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-card-text"></i> Description</span>
+                            <span class="info-value">{{ $database->description }}</span>
+                        </div>
+                        @endif
+
+                        <!-- Statistics -->
+                        <div class="section-label">STATISTICS</div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-activity"></i> Status</span>
+                            <span class="badge badge-md badge-pastel-{{ $database->exists_in_mysql ? 'green' : 'red' }}">
+                                {{ $database->exists_in_mysql ? 'Active' : 'Not Found' }}
+                            </span>
+                        </div>
+                        @if($database->exists_in_mysql)
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-hdd"></i> Database Size</span>
+                            <span class="info-value">{{ $database->size_mb }} MB</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-table"></i> Table Count</span>
+                            <span class="info-value">{{ $database->table_count }} tables</span>
+                        </div>
+                        @endif
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-calendar"></i> Created</span>
+                            <span class="info-value">{{ $database->created_at->format('M d, Y H:i') }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-clock-history"></i> Last Updated</span>
+                            <span class="info-value">{{ $database->updated_at->diffForHumans() }}</span>
+                        </div>
+                    </div>
                 </div>
-            @endif
-        </div>
-    </div>
+
+                <!-- Hidden Forms -->
+                <form id="delete-form-{{ $database->id }}" action="{{ route('databases.destroy', $database) }}" method="POST" class="d-none">
+                    @csrf
+                    @method('DELETE')
+                </form>
+            </div>
+        @endforeach
+
+        <!-- Pagination -->
+        @if($databases->hasPages())
+            <div class="mt-4">
+                {{ $databases->links() }}
+            </div>
+        @endif
+    @endif
+
+    <script>
+        function toggleCard(id) {
+            const body = document.getElementById(`card-body-${id}`);
+            const chevron = document.getElementById(`chevron-${id}`);
+            
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                chevron.classList.add('expanded');
+            } else {
+                body.style.display = 'none';
+                chevron.classList.remove('expanded');
+            }
+        }
+    </script>
 @endsection
