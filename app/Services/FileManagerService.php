@@ -314,6 +314,16 @@ class FileManagerService
             }
         }
 
+        // Sort: directories first, then files (both alphabetically)
+        usort($items, function($a, $b) {
+            // Directories before files
+            if ($a['type'] !== $b['type']) {
+                return $a['type'] === 'directory' ? -1 : 1;
+            }
+            // Alphabetically within same type
+            return strcasecmp($a['name'], $b['name']);
+        });
+
         return $items;
     }
 
