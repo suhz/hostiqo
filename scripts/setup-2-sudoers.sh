@@ -55,6 +55,8 @@ cat > "$SUDOERS_FILE" << EOF
 
 # Nginx Management
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start nginx
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop nginx
 $WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload nginx
 $WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nginx
 
@@ -69,6 +71,18 @@ $WEB_USER ALL=(ALL) NOPASSWD: /usr/sbin/php-fpm8.1 -t *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/sbin/php-fpm8.2 -t *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/sbin/php-fpm8.3 -t *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/sbin/php-fpm8.4 -t *
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php7.4-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php8.0-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php8.1-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php8.2-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php8.3-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start php8.4-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php7.4-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php8.0-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php8.1-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php8.2-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php8.3-fpm
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop php8.4-fpm
 $WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload php7.4-fpm
 $WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload php8.0-fpm
 $WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload php8.1-fpm
@@ -137,6 +151,34 @@ $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl start *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl stop *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl restart *
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/supervisorctl status
+
+# Service Management (systemctl for Service Manager module)
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl status *
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl is-active *
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl is-enabled *
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start supervisor
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop supervisor
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart supervisor
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload supervisor
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start redis-server
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop redis-server
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart redis-server
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start mysql
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop mysql
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart mysql
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start fail2ban
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop fail2ban
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart fail2ban
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl reload fail2ban
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl start ufw
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl stop ufw
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart ufw
+
+# Journal logs access for Service Manager
+$WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u * -n * --no-pager
+
+# Process monitoring for Service Manager
+$WEB_USER ALL=(ALL) NOPASSWD: /bin/ps -p * -o *
 
 # Git - Allow all git commands
 $WEB_USER ALL=(ALL) NOPASSWD: /usr/bin/git
