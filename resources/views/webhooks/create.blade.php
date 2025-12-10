@@ -33,7 +33,7 @@
                         <div class="mb-3">
                             <label for="domain" class="form-label">Domain / Website Reference</label>
                             <input type="text" class="form-control @error('domain') is-invalid @enderror" id="domain" name="domain" value="{{ old('domain') }}" placeholder="example.com">
-                            <div class="form-text">Optional website domain or reference</div>
+                            <div class="form-text">Optional website domain - will auto-generate local path (e.g., example.com → /var/www/example_com)</div>
                             @error('domain')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -89,8 +89,8 @@
 
                         <div class="mb-3">
                             <label for="local_path" class="form-label">Local Path <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('local_path') is-invalid @enderror" id="local_path" name="local_path" value="{{ old('local_path') }}" placeholder="/var/www/html/myproject" required>
-                            <div class="form-text">Absolute path where the repository will be cloned/deployed</div>
+                            <input type="text" class="form-control @error('local_path') is-invalid @enderror" id="local_path" name="local_path" value="{{ old('local_path') }}" placeholder="/var/www/example_com" required>
+                            <div class="form-text">Absolute path where the repository will be cloned/deployed (auto-generated from domain)</div>
                             @error('local_path')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -188,3 +188,46 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const domainInput = document.getElementById('domain');
+    const localPathInput = document.getElementById('local_path');
+    let manuallyEdited = false;
+
+    // Track if user manually edited local path
+    localPathInput.addEventListener('input', function() {
+        if (this.value !== '') {
+            manuallyEdited = true;
+        }
+    });
+
+    // Auto-generate local path from domain
+    domainInput.addEventListener('input', function() {
+        if (!manuallyEdited || localPathInput.value === '') {
+            let domain = this.value.trim();
+            if (domain) {
+                // Remove www. prefix if exists
+                domain = domain.replace(/^www\./, '');
+                
+                // Replace dots with underscores
+                const path = domain.replace(/\./g, '_');
+                
+                // Generate full path
+                localPathInput.value = '/var/www/' + path;
+            } else {
+                localPathInput.value = '';
+            }
+        }
+    });
+
+    // Reset manual edit flag if user clears the field
+    localPathInput.addEventListener('keydown', function(e) {
+        if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
+            manuallyEdited = false;
+        }
+    });
+});
+</script>
+@endpush
