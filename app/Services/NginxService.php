@@ -327,10 +327,10 @@ NGINX;
     ssl_session_cache shared:SSL:50m;
     ssl_session_tickets off;
     
-    # OCSP Stapling
+    # OCSP Stapling (improves SSL handshake performance)
     ssl_stapling on;
     ssl_stapling_verify on;
-    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver 8.8.8.8 8.8.4.4 1.1.1.1 valid=300s;
     resolver_timeout 5s;
     
     # Security: HSTS (HTTP Strict Transport Security)
