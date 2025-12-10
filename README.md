@@ -78,6 +78,13 @@ A simple self-managed server panel built with Laravel for automating Git deploym
 - 🔐 **Secure API** - Uses CloudFlare API tokens for authentication
 - 🎯 **A Record Support** - Automatic A record creation pointing to server IP
 
+### ⚙️ Service Manager
+- 🔧 **System Services** - Manage Nginx, PHP-FPM, MySQL, Redis, Supervisor from web UI
+- 📊 **Service Status** - Real-time status, PID, uptime, CPU and RAM usage per service
+- 🔄 **Service Control** - Start, stop, restart, reload services with one click
+- 📋 **Service Logs** - View service logs (systemd journal) with configurable line counts
+- ⚡ **Multi-Version PHP** - Manage all PHP versions (7.4-8.4) individually
+
 ### 🎨 General Features
 - 🚦 **Queue System** - Asynchronous deployment and configuration processing
 - 📱 **Responsive Design** - Modern card-based UI, works on all devices
@@ -104,29 +111,42 @@ A simple self-managed server panel built with Laravel for automating Git deploym
 - Node.js (multiple versions: 16.x, 18.x, 20.x, 21.x)
 - PM2 (for Node.js process management)
 - Redis >= 6.0
+- MySQL >= 8.0
+- Supervisor (process manager)
 - Certbot (for SSL certificates)
-- Proper sudo permissions (see [PREREQUISITES.md](PREREQUISITES.md))
+- fail2ban (security)
+- UFW (firewall)
+- Proper sudo permissions (see [scripts/README.md](scripts/README.md))
 
 ## 🔧 Installation
 
 ### Quick Setup (Automated) 🚀
 
-For Ubuntu/Debian servers, use our automated setup scripts:
+For Ubuntu/Debian servers, use our comprehensive automated setup scripts:
 
 ```bash
-# 1. Install system prerequisites
-sudo bash scripts/setup-ubuntu.sh
+# 1. Install system prerequisites (Nginx, PHP 7.4-8.4, MySQL, Redis, Node.js 20, Supervisor, fail2ban, UFW)
+sudo bash scripts/setup-1-ubuntu.sh
 
-# 2. Configure permissions
-sudo bash scripts/setup-sudoers.sh
+# 2. Configure sudo permissions (Nginx, services, firewall, etc)
+sudo bash scripts/setup-2-sudoers.sh
 
-# 3. Setup Laravel application
-bash scripts/setup-app.sh
+# 3. Setup Laravel app (database, migrations, admin user, assets)
+sudo -u www-data bash scripts/setup-3-app.sh
+
+# 4. Configure web server (Nginx vhost, SSL certificate)
+sudo bash scripts/setup-4-webserver.sh
 ```
 
-**Time:** ~20-30 minutes total
+**Features:**
+- ✅ Automated database setup with secure MySQL configuration
+- ✅ Interactive admin user creation
+- ✅ Automatic firewall rules seeding (SSH, HTTP, HTTPS)
+- ✅ SSL certificate automation with Let's Encrypt
+- ✅ Service Manager with full systemctl integration
 
-📚 **For detailed instructions**, see [scripts/README.md](scripts/README.md)
+**Time:** ~25-35 minutes total  
+📚 **For detailed step-by-step guide**, see [scripts/README.md](scripts/README.md)
 
 ---
 
@@ -162,7 +182,7 @@ APP_ENV=local
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=git_webhook
+DB_DATABASE=webhook_db
 DB_USERNAME=root
 DB_PASSWORD=
 
@@ -715,6 +735,7 @@ app/
 ├── Http/Controllers/
 │   ├── DashboardController.php      # Dashboard & statistics
 │   ├── ServerHealthController.php   # Server health monitoring (with time filters)
+│   ├── ServiceManagerController.php # Service Manager (systemctl for services)
 │   ├── WebhookController.php        # Webhook CRUD operations
 │   ├── WebsiteController.php        # Website/vhost management
 │   ├── DeploymentController.php     # Deployment management
@@ -741,7 +762,7 @@ app/
 │   ├── SystemMetric.php             # System metrics model
 │   ├── AlertRule.php                # Alert rules model
 │   ├── Alert.php                    # Triggered alerts model
-│   ├── FirewallRule.php             # Firewall rules model
+│   ├── FirewallRule.php             # Firewall rules model (with seeder)
 │   └── CronJob.php                  # Cron jobs model
 └── Services/
     ├── SshKeyService.php            # SSH key generation
@@ -750,6 +771,7 @@ app/
     ├── PhpFpmService.php            # PHP-FPM pool management
     ├── Pm2Service.php               # PM2 ecosystem management
     ├── SystemMonitorService.php     # System metrics collection
+    ├── ServiceManagerService.php    # Service Manager (systemctl wrapper)
     ├── FirewallService.php          # UFW firewall commands
     ├── CloudflareService.php        # CloudFlare API integration
     └── RemoteWebsiteService.php     # Remote website deployment

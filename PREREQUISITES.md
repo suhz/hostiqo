@@ -2,6 +2,8 @@
 
 This document covers all the system requirements and prerequisites needed to run the Git Webhook Manager with Virtual Host management features.
 
+> **💡 Quick Start**: For automated installation, see [scripts/README.md](scripts/README.md) - complete setup in ~25-35 minutes!
+
 ## Table of Contents
 
 - [System Requirements](#system-requirements)
@@ -43,6 +45,8 @@ This document covers all the system requirements and prerequisites needed to run
 | Node.js | 16.x, 18.x, 20.x, 21.x | Multiple Node versions for applications |
 | Redis | 6.0+ | Queue backend and caching |
 | Certbot | 1.0+ | Let's Encrypt SSL certificate management |
+| fail2ban | Latest | Brute-force protection (optional but recommended) |
+| UFW | Latest | Firewall management (optional but recommended) |
 | Composer | 2.x | PHP dependency management |
 | NPM/Yarn | Latest | Node.js package management |
 
@@ -75,13 +79,13 @@ sudo mysql_secure_installation
 sudo mysql
 
 # Create database
-CREATE DATABASE git_webhook CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE webhook_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 # Create user with password
-CREATE USER 'git_webhook'@'localhost' IDENTIFIED BY 'your_secure_password';
+CREATE USER 'webhook_user'@'localhost' IDENTIFIED BY 'your_secure_password';
 
 # Grant privileges
-GRANT ALL PRIVILEGES ON git_webhook.* TO 'git_webhook'@'localhost';
+GRANT ALL PRIVILEGES ON webhook_db.* TO 'webhook_user'@'localhost';
 
 # Flush privileges
 FLUSH PRIVILEGES;
@@ -108,13 +112,13 @@ sudo systemctl enable postgresql
 sudo -u postgres psql
 
 # Create database
-CREATE DATABASE git_webhook;
+CREATE DATABASE webhook_db;
 
 # Create user with password
-CREATE USER git_webhook WITH PASSWORD 'your_secure_password';
+CREATE USER webhook_user WITH PASSWORD 'your_secure_password';
 
 # Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE git_webhook TO git_webhook;
+GRANT ALL PRIVILEGES ON DATABASE webhook_db TO webhook_user;
 
 # Exit
 \q
@@ -181,9 +185,14 @@ sudo apt install php8.3 php8.3-fpm php8.3-cli php8.3-common php8.3-mysql \
     php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd \
     php8.3-bcmath php8.3-redis -y
 
+# Install PHP 8.4
+sudo apt install php8.4 php8.4-fpm php8.4-cli php8.4-common php8.4-mysql \
+    php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd \
+    php8.4-bcmath php8.4-redis -y
+
 # Start and enable PHP-FPM services
-sudo systemctl start php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm
-sudo systemctl enable php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm
+sudo systemctl start php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm php8.4-fpm
+sudo systemctl enable php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm php8.4-fpm
 
 # Verify installations
 php7.4 -v
@@ -191,6 +200,7 @@ php8.0 -v
 php8.1 -v
 php8.2 -v
 php8.3 -v
+php8.4 -v
 ```
 
 ### Node.js Installation
@@ -308,6 +318,49 @@ sudo apt install certbot python3-certbot-nginx -y
 
 # Verify installation
 certbot --version
+```
+
+### Supervisor Installation
+
+```bash
+# Install Supervisor
+sudo apt install supervisor -y
+
+# Start and enable Supervisor
+sudo systemctl start supervisor
+sudo systemctl enable supervisor
+
+# Verify installation
+sudo supervisorctl status
+```
+
+### fail2ban Installation (Recommended)
+
+```bash
+# Install fail2ban
+sudo apt install fail2ban -y
+
+# Start and enable fail2ban
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
+
+# Check status
+sudo systemctl status fail2ban
+```
+
+### UFW Firewall Setup (Recommended)
+
+```bash
+# UFW is usually pre-installed on Ubuntu
+# Allow SSH, HTTP, and HTTPS
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+
+# Enable firewall
+sudo ufw --force enable
+
+# Check status
+sudo ufw status
 ```
 
 ---
@@ -428,7 +481,7 @@ listen.mode = 0660
 Restart PHP-FPM services after changes:
 
 ```bash
-sudo systemctl restart php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm
+sudo systemctl restart php7.4-fpm php8.0-fpm php8.1-fpm php8.2-fpm php8.3-fpm php8.4-fpm
 ```
 
 #### Web Server User Configuration
@@ -480,8 +533,10 @@ www-data ALL=(ALL) NOPASSWD: /usr/bin/certbot --nginx -d * --non-interactive --a
 www-data ALL=(ALL) NOPASSWD: /usr/bin/certbot renew *
 www-data ALL=(ALL) NOPASSWD: /usr/bin/certbot certificates
 
-# PHP-FPM Pool Management
+# PHP-FPM Pool Management (all versions including 8.4)
 www-data ALL=(ALL) NOPASSWD: /usr/sbin/php-fpm* -t
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start php*-fpm
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop php*-fpm
 www-data ALL=(ALL) NOPASSWD: /bin/systemctl reload php*-fpm
 www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart php*-fpm
 www-data ALL=(ALL) NOPASSWD: /bin/mkdir -p /var/log/php*-fpm*
@@ -516,10 +571,46 @@ www-data ALL=(ALL) NOPASSWD: /usr/bin/pm2 restart *
 www-data ALL=(ALL) NOPASSWD: /usr/bin/pm2 save
 www-data ALL=(ALL) NOPASSWD: /usr/bin/pm2 jlist
 
+# Service Manager - System service control
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl status *
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl is-active *
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl is-enabled *
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start nginx
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop nginx
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start mysql
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop mysql
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart mysql
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start redis-server
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop redis-server
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart redis-server
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start supervisor
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop supervisor
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart supervisor
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl reload supervisor
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start fail2ban
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop fail2ban
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart fail2ban
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl reload fail2ban
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl start ufw
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl stop ufw
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl restart ufw
+www-data ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u * -n * --no-pager
+www-data ALL=(ALL) NOPASSWD: /bin/ps -p * -o *
+
+# UFW Firewall Management
+www-data ALL=(ALL) NOPASSWD: /usr/sbin/ufw
+www-data ALL=(ALL) NOPASSWD: /usr/sbin/ufw *
+
+# Crontab Management  
+www-data ALL=(ALL) NOPASSWD: /usr/bin/crontab
+www-data ALL=(ALL) NOPASSWD: /usr/bin/crontab *
+
 # Git Webhook Deployments - Run as deployment users
 www-data ALL=(ALL) NOPASSWD: /usr/bin/git
 www-data ALL=(ALL) NOPASSWD: /bin/bash
 ```
+
+> **💡 Automated Setup**: The [setup-2-sudoers.sh](scripts/setup-2-sudoers.sh) script automatically generates this complete sudoers configuration.
 
 Set proper permissions:
 
@@ -530,12 +621,16 @@ sudo chmod 0440 /etc/sudoers.d/git-webhook-manager
 **Security Note**: These permissions allow the web server to:
 1. Manage Nginx configurations for virtual hosts
 2. Request and renew SSL certificates via Let's Encrypt (certbot)
-3. Manage PHP-FPM pools for PHP projects
+3. Manage PHP-FPM pools for PHP projects (all versions 7.4-8.4)
 4. Create and manage webroot directories in `/var/www/`
 5. Manage PM2 ecosystem configurations for Node.js projects
 6. Control PM2 processes (start, stop, restart Node.js applications)
-7. Execute git deployments as specified deployment users
-8. Run deployment scripts (pre/post deploy hooks)
+7. **Service Manager**: Control system services (Nginx, PHP-FPM, MySQL, Redis, Supervisor, fail2ban, UFW)
+8. **Service Monitoring**: Query service status, logs, and resource usage
+9. **Firewall Management**: Add/remove UFW firewall rules
+10. **Cron Management**: Edit user crontab
+11. Execute git deployments as specified deployment users
+12. Run deployment scripts (pre/post deploy hooks)
 
 Ensure your application has proper authentication and authorization to prevent unauthorized access.
 
@@ -728,6 +823,7 @@ sudo systemctl status php8.0-fpm
 sudo systemctl status php8.1-fpm
 sudo systemctl status php8.2-fpm
 sudo systemctl status php8.3-fpm
+sudo systemctl status php8.4-fpm
 
 # Check PHP-FPM sockets
 ls -la /var/run/php/

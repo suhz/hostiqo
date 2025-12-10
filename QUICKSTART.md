@@ -2,7 +2,9 @@
 
 Get your Git Webhook Manager up and running in 5 minutes!
 
-## 📦 Installation (5 Steps)
+> **🚀 Production Setup?** For automated Ubuntu/Debian server deployment with all dependencies (Nginx, PHP 7.4-8.4, MySQL, Redis, Supervisor, etc), see [scripts/README.md](scripts/README.md) - complete setup in ~25-35 minutes!
+
+## 📦 Local Development Installation (5 Steps)
 
 ### Step 1: Install Dependencies
 ```bash
@@ -19,7 +21,7 @@ php artisan key:generate
 Edit `.env` and configure your database:
 ```env
 DB_CONNECTION=mysql
-DB_DATABASE=git_webhook
+DB_DATABASE=webhook_db
 DB_USERNAME=root
 DB_PASSWORD=your_password
 
