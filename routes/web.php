@@ -13,6 +13,7 @@ use App\Http\Controllers\LogViewerController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\ServerHealthController;
 use App\Http\Controllers\ServiceManagerController;
+use App\Http\Controllers\SupervisorProgramController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WebhookHandlerController;
 use App\Http\Controllers\WebsiteController;
@@ -120,6 +121,15 @@ Route::middleware('auth')->group(function () {
     // Cron Jobs
     Route::resource('cron-jobs', CronJobController::class);
     Route::post('cron-jobs/{cronJob}/toggle', [CronJobController::class, 'toggle'])->name('cron-jobs.toggle');
+
+    // Supervisor Programs
+    Route::resource('supervisor', SupervisorProgramController::class)->parameters([
+        'supervisor' => 'supervisorProgram'
+    ]);
+    Route::post('supervisor/{supervisorProgram}/start', [SupervisorProgramController::class, 'start'])->name('supervisor.start');
+    Route::post('supervisor/{supervisorProgram}/stop', [SupervisorProgramController::class, 'stop'])->name('supervisor.stop');
+    Route::post('supervisor/{supervisorProgram}/restart', [SupervisorProgramController::class, 'restart'])->name('supervisor.restart');
+    Route::post('supervisor/{supervisorProgram}/deploy', [SupervisorProgramController::class, 'deploy'])->name('supervisor.deploy');
 
     // Alerts
     Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');

@@ -76,6 +76,9 @@
                 <a class="nav-link {{ request()->routeIs('cron-jobs.*') ? 'active' : '' }}" href="{{ route('cron-jobs.index') }}">
                     <i class="bi bi-clock-history me-2"></i> Cron Jobs
                 </a>
+                <a class="nav-link {{ request()->routeIs('supervisor.*') ? 'active' : '' }}" href="{{ route('supervisor.index') }}">
+                    <i class="bi bi-terminal me-2"></i> Supervisor
+                </a>
 
                 <!-- Operation Section -->
                 <div class="nav-section-title">
