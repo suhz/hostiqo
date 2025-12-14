@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('webhook_id')->constrained()->onDelete('cascade');
             $table->string('status')->default('pending'); // pending, running, success, failed
             $table->string('commit_hash')->nullable();
-            $table->string('commit_message')->nullable();
+            $table->text('commit_message')->nullable();
             $table->string('author')->nullable();
             $table->text('output')->nullable();
             $table->text('error_message')->nullable();
