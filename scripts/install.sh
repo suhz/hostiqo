@@ -568,7 +568,7 @@ setup_webserver() {
     print_header "Phase 4: Web Server Configuration"
     
     # Get domain
-    read_input -p "Enter your domain name (e.g., webhook.example.com): " DOMAIN_NAME
+    read_input -p "Enter your domain name (e.g., hostiqo.example.com): " DOMAIN_NAME
     if [ -z "$DOMAIN_NAME" ]; then
         print_error "Domain name is required!"
         exit 1
@@ -870,7 +870,11 @@ main() {
     echo "  • Nginx config: /etc/nginx/sites-available/hostiqo"
     echo "  • App logs: $APP_DIR/storage/logs/"
     echo ""
-    print_info "Access your panel at: https://$DOMAIN_NAME"
+    if [[ "$SETUP_SSL" =~ ^[Yy]$ ]]; then
+        print_info "Access your panel at: https://$DOMAIN_NAME"
+    else
+        print_info "Access your panel at: http://$DOMAIN_NAME"
+    fi
     echo ""
 }
 
