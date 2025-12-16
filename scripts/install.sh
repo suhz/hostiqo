@@ -27,6 +27,11 @@ print_header() {
     echo ""
 }
 
+# Read input from terminal (works with curl pipe)
+read_input() {
+    read "$@" </dev/tty
+}
+
 # Check if running as root
 check_root() {
     if [[ $EUID -ne 0 ]]; then
@@ -409,17 +414,17 @@ setup_application() {
     # Database Setup
     print_header "Database Configuration"
     
-    read -p "Setup database automatically? (y/n, default: y): " SETUP_DB
+    read_input -p "Setup database automatically? (y/n, default: y): " SETUP_DB
     SETUP_DB=${SETUP_DB:-y}
     
     if [[ "$SETUP_DB" =~ ^[Yy]$ ]]; then
-        read -p "Database name (default: hostiqo): " DB_NAME
+        read_input -p "Database name (default: hostiqo): " DB_NAME
         DB_NAME=${DB_NAME:-hostiqo}
         
-        read -p "Database user (default: webhook_user): " DB_USER
+        read_input -p "Database user (default: webhook_user): " DB_USER
         DB_USER=${DB_USER:-webhook_user}
         
-        read -sp "Database password: " DB_PASS
+        read_input -sp "Database password: " DB_PASS
         echo ""
         
         if [ -z "$DB_PASS" ]; then
@@ -432,7 +437,7 @@ setup_application() {
             MYSQL_ROOT_PASS=$(cat /root/.mysql_root_password)
             print_info "Using MySQL root password from /root/.mysql_root_password"
         else
-            read -sp "MySQL root password: " MYSQL_ROOT_PASS
+            read_input -sp "MySQL root password: " MYSQL_ROOT_PASS
             echo ""
         fi
         
@@ -473,15 +478,15 @@ MYSQL_SCRIPT
     
     # Create admin user
     echo ""
-    read -p "Create admin user? (y/n, default: y): " CREATE_ADMIN
+    read_input -p "Create admin user? (y/n, default: y): " CREATE_ADMIN
     CREATE_ADMIN=${CREATE_ADMIN:-y}
     
     if [[ "$CREATE_ADMIN" =~ ^[Yy]$ ]]; then
-        read -p "Admin name (default: Admin): " ADMIN_NAME
+        read_input -p "Admin name (default: Admin): " ADMIN_NAME
         ADMIN_NAME=${ADMIN_NAME:-Admin}
         
-        read -p "Admin email: " ADMIN_EMAIL
-        read -sp "Admin password: " ADMIN_PASS
+        read_input -p "Admin email: " ADMIN_EMAIL
+        read_input -sp "Admin password: " ADMIN_PASS
         echo ""
         
         if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASS" ]; then
@@ -563,13 +568,13 @@ setup_webserver() {
     print_header "Phase 4: Web Server Configuration"
     
     # Get domain
-    read -p "Enter your domain name (e.g., webhook.example.com): " DOMAIN_NAME
+    read_input -p "Enter your domain name (e.g., webhook.example.com): " DOMAIN_NAME
     if [ -z "$DOMAIN_NAME" ]; then
         print_error "Domain name is required!"
         exit 1
     fi
     
-    read -p "Include www subdomain? (y/n, default: n): " INCLUDE_WWW
+    read_input -p "Include www subdomain? (y/n, default: n): " INCLUDE_WWW
     INCLUDE_WWW=${INCLUDE_WWW:-n}
     
     if [[ "$INCLUDE_WWW" =~ ^[Yy]$ ]]; then
@@ -580,11 +585,11 @@ setup_webserver() {
         SSL_DOMAINS="-d $DOMAIN_NAME"
     fi
     
-    read -p "Setup SSL certificate? (y/n, default: y): " SETUP_SSL
+    read_input -p "Setup SSL certificate? (y/n, default: y): " SETUP_SSL
     SETUP_SSL=${SETUP_SSL:-y}
     
     if [[ "$SETUP_SSL" =~ ^[Yy]$ ]]; then
-        read -p "Email for SSL notifications: " SSL_EMAIL
+        read_input -p "Email for SSL notifications: " SSL_EMAIL
         SSL_EMAIL=${SSL_EMAIL:-admin@$DOMAIN_NAME}
     fi
     
@@ -781,7 +786,7 @@ setup_repository() {
     # Check if already exists
     if [ -d "$DEFAULT_APP_DIR" ] && [ -f "$DEFAULT_APP_DIR/artisan" ]; then
         print_info "Hostiqo already exists at $DEFAULT_APP_DIR"
-        read -p "Use existing installation? (y/n, default: y): " USE_EXISTING
+        read_input -p "Use existing installation? (y/n, default: y): " USE_EXISTING
         USE_EXISTING=${USE_EXISTING:-y}
         
         if [[ "$USE_EXISTING" =~ ^[Yy]$ ]]; then
@@ -795,7 +800,7 @@ setup_repository() {
     fi
     
     # Ask for installation path
-    read -p "Installation path (default: $DEFAULT_APP_DIR): " CUSTOM_PATH
+    read_input -p "Installation path (default: $DEFAULT_APP_DIR): " CUSTOM_PATH
     APP_DIR=${CUSTOM_PATH:-$DEFAULT_APP_DIR}
     
     # Create parent directory
@@ -836,7 +841,7 @@ main() {
     echo "  5. Configure web server and SSL"
     echo ""
     
-    read -p "Continue with installation? (y/n): " CONTINUE
+    read_input -p "Continue with installation? (y/n): " CONTINUE
     if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
         print_info "Installation cancelled"
         exit 0
