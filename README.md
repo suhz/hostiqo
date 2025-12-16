@@ -115,6 +115,17 @@ wget https://raw.githubusercontent.com/hymns/hostiqo/master/scripts/install.sh
 sudo bash install.sh
 ```
 
+#### Run a specific installer phase
+
+Need to re-run just part of the installer? Each phase is callable on its own:
+
+```bash
+sudo bash install.sh --phase1   # System prerequisites
+sudo bash install.sh --phase2   # Sudoers configuration
+sudo bash install.sh --phase3   # Laravel application setup
+sudo bash install.sh --phase4   # Nginx + SSL configuration
+```
+
 **The installer will:**
 1. Clone Hostiqo to `/var/www/hostiqo`
 2. Install all system prerequisites (Nginx, PHP 8.2, MySQL, Redis, Node.js, Supervisor, etc.)
@@ -155,6 +166,16 @@ php artisan hostiqo:update
 Options:
 - `--force` - Skip confirmation prompt
 - `--no-backup` - Skip database backup
+- `--sudoers` - Refresh sudo permissions after update (run command with `sudo`)
+
+Refresh sudoers automatically during the update:
+
+```bash
+cd /var/www/hostiqo
+sudo php artisan hostiqo:update --sudoers
+```
+
+> Note: The `--sudoers` flag executes `sudo bash scripts/install.sh --phase2` to update `/etc/sudoers.d/hostiqo-manager`.
 
 ## 📖 Usage Guide
 
@@ -267,7 +288,7 @@ Configure monitoring settings in `.env`:
 MONITORING_ENABLED=true
 
 # Collection interval in minutes (how often to collect metrics)
-MONITORING_INTERVAL=2
+MONITORING_INTERVAL=1
 
 # Data retention in hours (how long to keep historical data)
 MONITORING_RETENTION_HOURS=24
@@ -277,6 +298,8 @@ MONITORING_CHART_HOURS=6
 ```
 
 #### Requirements
+
+> ⚙️ The automated installer already provisions Supervisor programs `hostiqo-queue` and `hostiqo-scheduler`, so background workers start automatically on fresh installs. Only follow the manual steps below if you performed a custom/manual setup or need to reconfigure services.
 
 **Scheduler must be running** for metrics collection:
 
@@ -485,22 +508,6 @@ Alerts are automatically categorized by severity:
 - All alerts are stored with timestamps
 - Track patterns and trends
 - Audit alert activity
-
-#### Requirements
-
-The scheduler must be running for alert checking:
-
-```bash
-# Development
-php artisan schedule:work
-
-# Production (use Supervisor)
-[program:webhook-scheduler]
-command=php /path/to/artisan schedule:work
-user=www-data
-autostart=true
-autorestart=true
-```
 
 ### Managing Websites (Virtual Hosts)
 
@@ -815,30 +822,6 @@ sudo chown -R www-data:www-data /var/www/html/myproject
 
 # Set proper permissions
 sudo chmod -R 755 /var/www/html/myproject
-```
-
-### Deploy User Configuration
-
-**Feature:** Execute deployment commands as specific system user
-
-**Use Case:**
-- When deployment path is owned by a different user
-- For better security and permission management
-- To isolate deployment processes
-
-**Setup:**
-1. Configure sudo permissions (see `DEPLOYMENT_USER.md` for details)
-2. Set deploy user in webhook configuration
-3. Ensure user has proper path permissions
-
-**Example:**
-```bash
-# Configure sudoers
-sudo visudo -f /etc/sudoers.d/laravel-webhook
-
-# Add:
-www-data ALL=(ALL) NOPASSWD: /usr/bin/git
-www-data ALL=(ALL) NOPASSWD: /bin/bash
 ```
 
 ## 🤝 Contributing

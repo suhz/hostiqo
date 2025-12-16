@@ -10,7 +10,8 @@ class HostiqoUpdate extends Command
 {
     protected $signature = 'hostiqo:update 
                             {--force : Force update without confirmation}
-                            {--no-backup : Skip database backup}';
+                            {--no-backup : Skip database backup}
+                            {--sudoers : Refresh sudoers configuration after update (requires sudo/root)}';
 
     protected $description = 'Update Hostiqo to the latest version';
 
@@ -111,6 +112,23 @@ class HostiqoUpdate extends Command
         Artisan::call('route:cache');
         Artisan::call('view:cache');
         $this->info('✓ Application optimized');
+
+        if ($this->option('sudoers')) {
+            $this->info('');
+            $this->warn('Extra Step: Refreshing sudoers configuration...');
+
+            $result = Process::path(base_path())->run('sudo bash scripts/install.sh --phase2');
+
+            if ($result->successful()) {
+                $this->info('✓ Sudoers configuration refreshed');
+            } else {
+                $this->warn('⚠ Failed to refresh sudoers automatically. Please run "sudo bash scripts/install.sh --phase2" manually.');
+                $errorOutput = trim($result->errorOutput());
+                if (!empty($errorOutput)) {
+                    $this->line($errorOutput);
+                }
+            }
+        }
 
         // Disable maintenance mode
         Artisan::call('up');
