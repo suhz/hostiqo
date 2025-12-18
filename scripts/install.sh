@@ -41,6 +41,19 @@ check_root() {
     fi
 }
 
+# Enable fail2ban jail
+enable_jail() {
+    local jail="$1"
+    local file="/etc/fail2ban/jail.d/${jail}.local"
+
+    fail2ban-client status 2>/dev/null | grep -q "$jail" || return 0
+
+    cat > "$file" <<EOF
+[$jail]
+enabled = true
+EOF
+}
+
 # Default installation path
 DEFAULT_APP_DIR="/var/www/hostiqo"
 REPO_URL="https://github.com/hymns/hostiqo.git"
@@ -180,8 +193,25 @@ install_prerequisites() {
     # Install fail2ban
     print_info "Installing fail2ban..."
     if apt-get install -y fail2ban > /dev/null 2>&1; then
+        print_info "Configuring fail2ban defaults..."
+        if [ -f /etc/fail2ban/jail.conf ]; then
+            mkdir -p /etc/fail2ban/jail.d
+
+            cat > /etc/fail2ban/jail.d/00-defaults.local << 'EOF'
+[DEFAULT]
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+backend  = systemd
+ignoreip = 127.0.0.1/8 ::1
+EOF
+
+            enable_jail sshd
+            enable_jail nginx-botsearch
+            enable_jail nginx-http-auth
+        fi
         systemctl enable fail2ban > /dev/null 2>&1
-        systemctl start fail2ban > /dev/null 2>&1
+        systemctl restart fail2ban > /dev/null 2>&1
         print_success "fail2ban installed and enabled"
     fi
     
