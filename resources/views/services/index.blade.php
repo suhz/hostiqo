@@ -52,7 +52,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    @if($service['is_active'])
+                                    @if($service['running'] ?? false)
                                         <span class="badge badge-pastel-green">
                                             <i class="bi bi-check-circle me-1"></i> Running
                                         </span>
@@ -67,7 +67,7 @@
                             <!-- Service Info -->
                             <div class="service-info mb-3">
                                 <div class="row g-2 small">
-                                    @if($service['cpu'] !== null || $service['memory'] !== null)
+                                    @if(isset($service['cpu']) || isset($service['memory']))
                                         <div class="col-6">
                                             <div class="text-muted"><i class="bi bi-cpu"></i> CPU</div>
                                             <div class="fw-semibold">{{ $service['cpu'] ?? '0.0' }}%</div>
@@ -77,23 +77,23 @@
                                             <div class="fw-semibold">{{ $service['memory'] ?? '0.0' }}%</div>
                                         </div>
                                     @endif
-                                    @if($service['pid'])
+                                    @if(!empty($service['pid']))
                                         <div class="col-6">
                                             <div class="text-muted"># PID</div>
                                             <div class="fw-semibold">{{ $service['pid'] }}</div>
                                         </div>
                                     @endif
-                                    @if($service['uptime'])
+                                    @if(!empty($service['uptime']))
                                         <div class="col-6">
                                             <div class="text-muted"><i class="bi bi-clock"></i> Since</div>
                                             <div class="fw-semibold small">{{ $service['uptime'] }}</div>
                                         </div>
                                     @endif
-                                    @if($service['is_enabled'] !== null)
+                                    @if(isset($service['enabled']))
                                         <div class="col-12">
                                             <div class="text-muted"><i class="bi bi-power"></i> Auto-start</div>
                                             <div class="fw-semibold">
-                                                @if($service['is_enabled'])
+                                                @if($service['enabled'] ?? false)
                                                     <span class="badge badge-pastel-green">Enabled</span>
                                                 @else
                                                     <span class="badge badge-pastel-yellow">Disabled</span>
@@ -106,7 +106,7 @@
 
                             <!-- Action Buttons -->
                             <div class="btn-group w-100 mb-2" role="group">
-                                @if($service['is_active'])
+                                @if($service['running'] ?? false)
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="stopService('{{ $key }}', '{{ $service['name'] }}')">
                                         <i class="bi bi-stop-circle"></i> Stop
                                     </button>
