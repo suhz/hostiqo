@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ServiceManagerService;
+use App\Contracts\ServiceManagerInterface;
 use Illuminate\Http\Request;
 use Exception;
 
 class ServiceManagerController extends Controller
 {
-    protected ServiceManagerService $serviceManager;
-
-    public function __construct(ServiceManagerService $serviceManager)
-    {
-        $this->serviceManager = $serviceManager;
-    }
+    public function __construct(
+        protected ServiceManagerInterface $serviceManager
+    ) {}
 
     /**
      * Service manager index

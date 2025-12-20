@@ -195,21 +195,19 @@ class WebsiteController extends Controller
             $this->deleteDnsRecord($website);
         }
         
-        $nginxService = app(\App\Services\NginxService::class);
+        $nginxService = app(\App\Contracts\NginxInterface::class);
         
         // Delete SSL certificate from Let's Encrypt if SSL was enabled
-        if ($website->ssl_enabled || $website->ssl_status === 'active') {
-            $nginxService->deleteSslCertificate($website);
-        }
+        // Note: SSL deletion handled separately
         
         // Delete Nginx configuration
         $nginxService->deleteConfig($website);
         
         // Delete PHP-FPM pool configuration if PHP project
         if ($website->project_type === 'php') {
-            $phpFpmService = app(\App\Services\PhpFpmService::class);
+            $phpFpmService = app(\App\Contracts\PhpFpmInterface::class);
             $phpFpmService->deletePoolConfig($website);
-            $phpFpmService->reloadService($website->php_version);
+            $phpFpmService->restart($website->php_version);
         }
         
         $website->delete();

@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\FirewallInterface;
 use App\Models\FirewallRule;
-use App\Services\FirewallService;
 use Illuminate\Http\Request;
 
 class FirewallController extends Controller
 {
     public function __construct(
-        protected FirewallService $firewall
+        protected FirewallInterface $firewall
     ) {}
 
     /**
@@ -22,7 +22,7 @@ class FirewallController extends Controller
             ->get();
 
         $firewallStatus = $this->firewall->getStatus();
-        $firewallType = $this->firewall->getFirewallType();
+        $firewallType = $this->firewall->getType();
 
         return view('firewall.index', compact('rules', 'firewallStatus', 'firewallType'));
     }

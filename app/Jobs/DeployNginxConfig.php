@@ -2,9 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Contracts\NginxInterface;
+use App\Contracts\PhpFpmInterface;
 use App\Models\Website;
-use App\Services\NginxService;
-use App\Services\PhpFpmService;
 use App\Services\Pm2Service;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -27,7 +27,7 @@ class DeployNginxConfig implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(NginxService $nginxService, PhpFpmService $phpFpmService, Pm2Service $pm2Service): void
+    public function handle(NginxInterface $nginxService, PhpFpmInterface $phpFpmService, Pm2Service $pm2Service): void
     {
         Log::info('Starting Nginx config deployment', [
             'website_id' => $this->website->id,
@@ -57,7 +57,7 @@ class DeployNginxConfig implements ShouldQueue
                             'website_id' => $this->website->id,
                             'output' => $testResult['output']
                         ]);
-                        $phpFpmService->reloadService($this->website->php_version);
+                        $phpFpmService->reload($this->website->php_version);
                     } else {
                         throw new \Exception("PHP-FPM config test failed: " . ($testResult['output'] ?? 'Unknown error'));
                     }

@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Services\Nginx;
+
+class DebianNginxService extends AbstractNginxService
+{
+    public function __construct()
+    {
+        $this->sitesAvailable = '/etc/nginx/sites-available';
+        $this->sitesEnabled = '/etc/nginx/sites-enabled';
+        $this->configTestCmd = 'sudo /usr/sbin/nginx -t';
+        $this->reloadCmd = 'sudo /bin/systemctl reload nginx';
+    }
+
+    public function getOsFamily(): string
+    {
+        return 'debian';
+    }
+
+    public function getPhpFpmSocketPath(string $phpVersion, string $poolName, ?string $customPool = null): string
+    {
+        if ($customPool) {
+            return "/var/run/php/php{$phpVersion}-fpm-{$poolName}.sock";
+        }
+        return "/var/run/php/php{$phpVersion}-fpm.sock";
+    }
+
+    protected function getFastcgiConfig(): string
+    {
+        return '        include snippets/fastcgi-php.conf;';
+    }
+}

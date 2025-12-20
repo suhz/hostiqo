@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Services\PhpFpm;
+
+use App\Contracts\PhpFpmInterface;
+use App\Models\Website;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
+
+abstract class AbstractPhpFpmService implements PhpFpmInterface
+{
+    protected string $poolDirectory;
+    protected string $webServerUser;
+    protected string $webServerGroup;
+
+    abstract public function getOsFamily(): string;
+    abstract public function getPoolDirectoryPath(string $phpVersion): string;
+    abstract public function getSocketPath(string $phpVersion, string $poolName): string;
+    abstract public function getLogPath(string $phpVersion): string;
+    abstract public function getWebServerUser(): string;
+    abstract public function getWebServerGroup(): string;
+
+    /**
+     * Get default PHP hardening settings
+     */
+    public function getDefaultSettings(): array
+    {
+        return [
+            'memory_limit' => '256M',
+            'max_execution_time' => '300',
+            'upload_max_filesize' => '100M',
+            'post_max_size' => '100M',
+            'max_input_time' => '60',
+            'max_input_vars' => '1000',
+            'disable_functions' => implode(',', [
+                'exec', 'passthru', 'shell_exec', 'system',
+                'proc_open', 'popen', 'curl_exec', 'curl_multi_exec',
+                'parse_ini_file', 'show_source',
+            ]),
+            'expose_php' => 'Off',
+            'display_errors' => 'Off',
+            'log_errors' => 'On',
+            'allow_url_fopen' => 'On',
+            'allow_url_include' => 'Off',
+            'file_uploads' => 'On',
+            'enable_dl' => 'Off',
+        ];
+    }
+
+    /**
+     * Generate pool name from website
+     */
+    protected function generatePoolName(Website $website): string
+    {
+        return Str::slug($website->domain, '_');
+    }
+
+    /**
+     * Build PHP admin values for pool config
+     */
+    protected function buildPhpAdminValues(array $settings): string
+    {
+        $lines = [];
+        foreach ($settings as $key => $value) {
+            $lines[] = "php_admin_value[{$key}] = {$value}";
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Generate PHP-FPM pool configuration for a website
+     */
+    public function generatePoolConfig(Website $website): string
+    {
+        if ($website->project_type !== 'php') {
+            throw new \InvalidArgumentException('Website is not a PHP project');
+        }
+
+        $poolName = $website->php_pool_name ?? $this->generatePoolName($website);
+        $settings = array_merge(
+            $this->getDefaultSettings(),
+            $website->php_settings ?? []
+        );
+
+        // Add open_basedir restriction
+        if (!isset($settings['open_basedir'])) {
+            $settings['open_basedir'] = implode(':', [
+                $website->root_path,
+                '/tmp',
+                '/usr/share/php',
+                '/usr/share/pear',
+            ]);
+        }
+
+        $phpAdmin = $this->buildPhpAdminValues($settings);
+        $socketPath = $this->getSocketPath($website->php_version, $poolName);
+        $logDir = $this->getLogPath($website->php_version);
+        $user = $this->getWebServerUser();
+        $group = $this->getWebServerGroup();
+
+        return <<<POOL
+[{$poolName}]
+user = {$user}
+group = {$group}
+
+listen = {$socketPath}
+listen.owner = {$user}
+listen.group = {$group}
+listen.mode = 0660
+
+; Process manager settings
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+pm.max_requests = 500
+
+; PHP settings
+{$phpAdmin}
+
+; Security: Path isolation via open_basedir (configured above)
+; Note: open_basedir restricts file operations to allowed paths only
+
+; Access log
+access.log = {$logDir}/{$poolName}-access.log
+access.format = "%R - %u %t \"%m %r%Q%q\" %s %f %{mili}d %{kilo}M %C%%"
+
+; Slow log for debugging
+slowlog = {$logDir}/{$poolName}-slow.log
+request_slowlog_timeout = 5s
+
+; Error log
+php_admin_value[error_log] = {$logDir}/{$poolName}-error.log
+POOL;
+    }
+
+    /**
+     * Test PHP-FPM configuration
+     */
+    abstract public function testConfig(string $phpVersion, ?string $poolConfigPath = null): array;
+
+    /**
+     * Restart PHP-FPM service
+     */
+    abstract public function restart(string $phpVersion): array;
+
+    /**
+     * Reload PHP-FPM service
+     */
+    abstract public function reload(string $phpVersion): array;
+}

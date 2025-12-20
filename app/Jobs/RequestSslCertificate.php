@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Website;
-use App\Services\NginxService;
+use App\Services\SslService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +25,7 @@ class RequestSslCertificate implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(NginxService $nginxService): void
+    public function handle(SslService $sslService): void
     {
         Log::info('Starting SSL certificate request', [
             'website_id' => $this->website->id,
@@ -39,7 +39,7 @@ class RequestSslCertificate implements ShouldQueue
             ]);
 
             // Request SSL certificate
-            $result = $nginxService->requestSslCertificate($this->website);
+            $result = $sslService->requestCertificate($this->website);
 
             if ($result['success']) {
                 Log::info('SSL certificate installed successfully', [
