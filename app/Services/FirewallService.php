@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Traits\DetectsOperatingSystem;
 use Illuminate\Support\Facades\Process;
 use Exception;
 
 class FirewallService
 {
+    use DetectsOperatingSystem;
+
     protected string $firewallType;
 
     public function __construct()
@@ -19,17 +22,9 @@ class FirewallService
      */
     protected function detectFirewallType(): string
     {
-        // Check OS first - RHEL-based uses firewalld
-        if (file_exists('/etc/redhat-release')) {
+        // Use trait's OS detection
+        if ($this->isRhel()) {
             return 'firewalld';
-        }
-        
-        // Check /etc/os-release for RHEL-like distros
-        if (file_exists('/etc/os-release')) {
-            $content = file_get_contents('/etc/os-release');
-            if (preg_match('/ID_LIKE=.*rhel|ID_LIKE=.*fedora|ID=.*rocky|ID=.*alma|ID=.*centos/i', $content)) {
-                return 'firewalld';
-            }
         }
 
         // Check for firewalld binary

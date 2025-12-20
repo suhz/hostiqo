@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Website;
+use App\Traits\DetectsOperatingSystem;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -10,6 +11,8 @@ use Illuminate\Support\Str;
 
 class PhpFpmService
 {
+    use DetectsOperatingSystem;
+
     protected string $poolDirectory;
     protected bool $isLocal;
     protected string $webServerUser;
@@ -24,12 +27,37 @@ class PhpFpmService
             $this->poolDirectory = storage_path('server/php/{version}/pool.d');
             $this->ensureLocalDirectories();
         } else {
-            // Production path
-            $this->poolDirectory = '/etc/php/{version}/fpm/pool.d';
+            // Production path - RHEL Remi vs Debian
+            if ($this->isRhel()) {
+                // RHEL/Remi: /etc/opt/remi/php84/php-fpm.d/
+                $this->poolDirectory = '/etc/opt/remi/php{version}/php-fpm.d';
+            } else {
+                // Debian: /etc/php/8.4/fpm/pool.d/
+                $this->poolDirectory = '/etc/php/{version}/fpm/pool.d';
+            }
         }
 
         // Detect web server user and group
         $this->detectWebServerUser();
+    }
+
+    /**
+     * Get pool directory path for a specific PHP version
+     */
+    protected function getPoolDirectoryPath(string $phpVersion): string
+    {
+        if ($this->isLocal) {
+            return str_replace('{version}', $phpVersion, $this->poolDirectory);
+        }
+        
+        if ($this->isRhel()) {
+            // RHEL uses format like php84 (no dot)
+            $phpVer = $this->phpVersionToRhel($phpVersion);
+            return str_replace('{version}', $phpVer, $this->poolDirectory);
+        }
+        
+        // Debian uses format like 8.4
+        return str_replace('{version}', $phpVersion, $this->poolDirectory);
     }
 
     /**
@@ -53,23 +81,9 @@ class PhpFpmService
             $this->webServerUser = get_current_user();
             $this->webServerGroup = $this->webServerUser;
         } else {
-            // Production - try to detect
-            // macOS/BSD uses _www or www, Linux uses www-data
-            $possibleUsers = ['www-data', 'www', '_www', 'nginx', 'apache'];
-            
-            foreach ($possibleUsers as $user) {
-                // Check if user exists
-                $result = Process::run(['id', '-u', $user]);
-                if ($result->successful()) {
-                    $this->webServerUser = $user;
-                    $this->webServerGroup = $user;
-                    return;
-                }
-            }
-
-            // Fallback to www-data
-            $this->webServerUser = 'www-data';
-            $this->webServerGroup = 'www-data';
+            // Use trait methods
+            $this->webServerUser = $this->getWebServerUser();
+            $this->webServerGroup = $this->getWebServerGroup();
         }
     }
 
@@ -150,7 +164,13 @@ class PhpFpmService
         if ($this->isLocal) {
             $socketPath = storage_path("server/php/php{$website->php_version}-fpm-{$poolName}.sock");
             $logDir = storage_path("server/logs/php{$website->php_version}-fpm");
+        } elseif ($this->isRhel()) {
+            // RHEL/Remi paths
+            $phpVer = $this->phpVersionToRhel($website->php_version);
+            $socketPath = "/var/opt/remi/php{$phpVer}/run/php-fpm/{$poolName}.sock";
+            $logDir = "/var/opt/remi/php{$phpVer}/log/php-fpm";
         } else {
+            // Debian paths
             $socketPath = "/var/run/php/php{$website->php_version}-fpm-{$poolName}.sock";
             $logDir = "/var/log/php{$website->php_version}-fpm";
         }
@@ -243,7 +263,7 @@ POOL;
             $poolName = $website->php_pool_name ?? $this->generatePoolName($website);
             $config = $this->generatePoolConfig($website);
             
-            $poolDir = str_replace('{version}', $website->php_version, $this->poolDirectory);
+            $poolDir = $this->getPoolDirectoryPath($website->php_version);
             $filepath = "{$poolDir}/{$poolName}.conf";
 
             if ($this->isLocal) {
@@ -269,10 +289,18 @@ POOL;
                 ]);
             } else {
                 // Production mode: Use sudo
-                // Create log directory if not exists
-                $logDir = "/var/log/php{$website->php_version}-fpm";
+                // Create log directory if not exists (OS-specific paths)
+                if ($this->isRhel()) {
+                    $phpVer = $this->phpVersionToRhel($website->php_version);
+                    $logDir = "/var/opt/remi/php{$phpVer}/log/php-fpm";
+                    $socketPath = "/var/opt/remi/php{$phpVer}/run/php-fpm/{$poolName}.sock";
+                } else {
+                    $logDir = "/var/log/php{$website->php_version}-fpm";
+                    $socketPath = "/var/run/php/php{$website->php_version}-fpm-{$poolName}.sock";
+                }
+                
                 Process::run("sudo /bin/mkdir -p {$logDir}");
-                Process::run("sudo /bin/chown www-data:www-data {$logDir}");
+                Process::run("sudo /bin/chown {$this->webServerUser}:{$this->webServerGroup} {$logDir}");
 
                 // Write to temporary file first
                 $tempFile = tempnam(sys_get_temp_dir(), 'phpfpm_');
@@ -290,8 +318,6 @@ POOL;
 
                 // Set proper permissions
                 Process::run("sudo /bin/chmod 644 {$filepath}");
-                
-                $socketPath = "/var/run/php/php{$website->php_version}-fpm-{$poolName}.sock";
             }
 
             // Update pool name in database
@@ -332,7 +358,7 @@ POOL;
                 ];
             }
 
-            $poolDir = str_replace('{version}', $website->php_version, $this->poolDirectory);
+            $poolDir = $this->getPoolDirectoryPath($website->php_version);
             $filepath = "{$poolDir}/{$website->php_pool_name}.conf";
 
             if ($this->isLocal) {

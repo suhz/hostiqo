@@ -2,39 +2,19 @@
 
 namespace App\Services;
 
+use App\Traits\DetectsOperatingSystem;
 use Illuminate\Support\Facades\Process;
 use Exception;
 
 class ServiceManagerService
 {
-    protected string $osFamily;
+    use DetectsOperatingSystem;
+
     protected array $supportedServices;
 
     public function __construct()
     {
-        $this->osFamily = $this->detectOsFamily();
         $this->supportedServices = $this->buildServiceList();
-    }
-
-    /**
-     * Detect OS family (debian or rhel)
-     */
-    protected function detectOsFamily(): string
-    {
-        // Check for RHEL-based
-        if (file_exists('/etc/redhat-release')) {
-            return 'rhel';
-        }
-        
-        // Check /etc/os-release
-        if (file_exists('/etc/os-release')) {
-            $content = file_get_contents('/etc/os-release');
-            if (preg_match('/ID_LIKE=.*rhel|ID_LIKE=.*fedora|ID=.*rocky|ID=.*alma|ID=.*centos/i', $content)) {
-                return 'rhel';
-            }
-        }
-        
-        return 'debian';
     }
 
     /**
@@ -42,7 +22,7 @@ class ServiceManagerService
      */
     protected function buildServiceList(): array
     {
-        $isRhel = $this->osFamily === 'rhel';
+        $isRhel = $this->isRhel();
 
         return [
             // Web Server

@@ -3,12 +3,15 @@
 namespace App\Services;
 
 use App\Models\Website;
+use App\Traits\DetectsOperatingSystem;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
 class NginxService
 {
+    use DetectsOperatingSystem;
+
     protected string $nginxSitesAvailable;
     protected string $nginxSitesEnabled;
     protected string $nginxConfigTest;
@@ -30,12 +33,59 @@ class NginxService
             // Create directories if they don't exist
             $this->ensureLocalDirectories();
         } else {
-            // Production paths
-            $this->nginxSitesAvailable = '/etc/nginx/sites-available';
-            $this->nginxSitesEnabled = '/etc/nginx/sites-enabled';
+            // Production paths - RHEL uses conf.d, Debian uses sites-available/sites-enabled
+            if ($this->isRhel()) {
+                $this->nginxSitesAvailable = '/etc/nginx/conf.d';
+                $this->nginxSitesEnabled = '/etc/nginx/conf.d'; // RHEL doesn't use symlinks
+            } else {
+                $this->nginxSitesAvailable = '/etc/nginx/sites-available';
+                $this->nginxSitesEnabled = '/etc/nginx/sites-enabled';
+            }
             $this->nginxConfigTest = 'sudo /usr/sbin/nginx -t';
             $this->nginxReload = 'sudo /bin/systemctl reload nginx';
         }
+    }
+
+    /**
+     * Get PHP-FPM socket path based on OS
+     */
+    protected function getPhpFpmSocketPath(string $phpVersion, string $poolName, ?string $customPool = null): string
+    {
+        if ($this->isRhel()) {
+            // RHEL/Remi: /var/opt/remi/php84/run/php-fpm/www.sock or custom pool
+            $phpVer = $this->phpVersionToRhel($phpVersion);
+            if ($customPool) {
+                return "/var/opt/remi/php{$phpVer}/run/php-fpm/{$poolName}.sock";
+            }
+            return "/var/opt/remi/php{$phpVer}/run/php-fpm/www.sock";
+        }
+        
+        // Debian: /var/run/php/php8.4-fpm.sock or custom pool
+        if ($customPool) {
+            return "/var/run/php/php{$phpVersion}-fpm-{$poolName}.sock";
+        }
+        return "/var/run/php/php{$phpVersion}-fpm.sock";
+    }
+
+    /**
+     * Get fastcgi configuration based on OS
+     */
+    protected function getFastcgiConfig(): string
+    {
+        if ($this->isRhel()) {
+            // RHEL doesn't have snippets/fastcgi-php.conf, use inline config
+            return <<<'FASTCGI'
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+FASTCGI;
+        }
+        
+        // Debian uses the snippets file
+        return '        include snippets/fastcgi-php.conf;';
     }
 
     /**
@@ -101,11 +151,12 @@ class NginxService
                 : storage_path("server/php/php{$website->php_version}-fpm.sock");
             $logDir = storage_path('server/logs/nginx');
         } else {
-            $socketPath = $website->php_pool_name 
-                ? "/var/run/php/php{$website->php_version}-fpm-{$poolName}.sock"
-                : "/var/run/php/php{$website->php_version}-fpm.sock";
+            $socketPath = $this->getPhpFpmSocketPath($website->php_version, $poolName, $website->php_pool_name);
             $logDir = '/var/log/nginx';
         }
+        
+        // Get fastcgi config based on OS
+        $fastcgiConfig = $this->getFastcgiConfig();
 
         return <<<NGINX
 server {
@@ -142,7 +193,7 @@ server {
 
     # PHP processing
     location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
+{$fastcgiConfig}
         fastcgi_pass unix:{$socketPath};
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;

@@ -3,44 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Website;
+use App\Traits\DetectsOperatingSystem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 class LogViewerController extends Controller
 {
-    protected string $osFamily;
-
-    public function __construct()
-    {
-        $this->osFamily = $this->detectOsFamily();
-    }
-
-    /**
-     * Detect OS family (debian or rhel)
-     */
-    protected function detectOsFamily(): string
-    {
-        if (file_exists('/etc/redhat-release')) {
-            return 'rhel';
-        }
-        
-        if (file_exists('/etc/os-release')) {
-            $content = file_get_contents('/etc/os-release');
-            if (preg_match('/ID_LIKE=.*rhel|ID_LIKE=.*fedora|ID=.*rocky|ID=.*alma|ID=.*centos/i', $content)) {
-                return 'rhel';
-            }
-        }
-        
-        return 'debian';
-    }
+    use DetectsOperatingSystem;
 
     /**
      * Get PHP-FPM log path based on OS
      */
     protected function getPhpFpmLogPath(): string
     {
-        if ($this->osFamily === 'rhel') {
+        if ($this->isRhel()) {
             // Try to find the latest PHP version log
             $phpVersions = ['84', '83', '82', '81', '80', '74'];
             foreach ($phpVersions as $ver) {
@@ -59,7 +36,7 @@ class LogViewerController extends Controller
      */
     protected function getSystemLogPath(): string
     {
-        if ($this->osFamily === 'rhel') {
+        if ($this->isRhel()) {
             return '/var/log/messages';
         }
         return '/var/log/syslog';
