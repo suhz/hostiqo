@@ -7,92 +7,137 @@ use Exception;
 
 class ServiceManagerService
 {
-    // Supported services (auto-detected from system)
-    protected array $supportedServices = [
-        // Web Server
-        'nginx' => [
-            'name' => 'Nginx',
-            'service' => 'nginx',
-            'supports_reload' => true,
-            'icon' => 'hexagon'
-        ],
+    protected string $osFamily;
+    protected array $supportedServices;
+
+    public function __construct()
+    {
+        $this->osFamily = $this->detectOsFamily();
+        $this->supportedServices = $this->buildServiceList();
+    }
+
+    /**
+     * Detect OS family (debian or rhel)
+     */
+    protected function detectOsFamily(): string
+    {
+        // Check for RHEL-based
+        if (file_exists('/etc/redhat-release')) {
+            return 'rhel';
+        }
         
-        // Databases
-        'redis' => [
-            'name' => 'Redis',
-            'service' => 'redis-server',
-            'supports_reload' => false,
-            'icon' => 'lightning',
-        ],
-        'mysql' => [
-            'name' => 'MySQL',
-            'service' => 'mysql',
-            'supports_reload' => false,
-            'icon' => 'database',
-        ],
+        // Check /etc/os-release
+        if (file_exists('/etc/os-release')) {
+            $content = file_get_contents('/etc/os-release');
+            if (preg_match('/ID_LIKE=.*rhel|ID_LIKE=.*fedora|ID=.*rocky|ID=.*alma|ID=.*centos/i', $content)) {
+                return 'rhel';
+            }
+        }
         
-        // PHP Versions (installed by setup-1-ubuntu.sh)
-        'php8.4-fpm' => [
-            'name' => 'PHP 8.4 FPM',
-            'service' => 'php8.4-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        'php8.3-fpm' => [
-            'name' => 'PHP 8.3 FPM',
-            'service' => 'php8.3-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        'php8.2-fpm' => [
-            'name' => 'PHP 8.2 FPM',
-            'service' => 'php8.2-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        'php8.1-fpm' => [
-            'name' => 'PHP 8.1 FPM',
-            'service' => 'php8.1-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        'php8.0-fpm' => [
-            'name' => 'PHP 8.0 FPM',
-            'service' => 'php8.0-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        'php7.4-fpm' => [
-            'name' => 'PHP 7.4 FPM',
-            'service' => 'php7.4-fpm',
-            'supports_reload' => true,
-            'icon' => 'code',
-        ],
-        
-        // Process Managers
-        'supervisor' => [
-            'name' => 'Supervisor',
-            'service' => 'supervisor',
-            'supports_reload' => true,
-            'icon' => 'display',
-        ],
-        
-        // Security
-        'fail2ban' => [
-            'name' => 'fail2ban',
-            'service' => 'fail2ban',
-            'supports_reload' => true,
-            'icon' => 'shield-shaded',
-        ],
-        
-        // Firewall
-        'ufw' => [
-            'name' => 'UFW Firewall',
-            'service' => 'ufw',
-            'supports_reload' => false,
-            'icon' => 'shield-check',
-        ],
-    ];
+        return 'debian';
+    }
+
+    /**
+     * Build service list based on OS family
+     */
+    protected function buildServiceList(): array
+    {
+        $isRhel = $this->osFamily === 'rhel';
+
+        return [
+            // Web Server
+            'nginx' => [
+                'name' => 'Nginx',
+                'service' => 'nginx',
+                'supports_reload' => true,
+                'icon' => 'hexagon'
+            ],
+            
+            // Databases
+            'redis' => [
+                'name' => 'Redis',
+                'service' => $isRhel ? 'redis' : 'redis-server',
+                'supports_reload' => false,
+                'icon' => 'lightning',
+            ],
+            'mysql' => [
+                'name' => $isRhel ? 'MariaDB' : 'MySQL',
+                'service' => $isRhel ? 'mariadb' : 'mysql',
+                'supports_reload' => false,
+                'icon' => 'database',
+            ],
+            
+            // PHP Versions - Debian style
+            'php8.4-fpm' => [
+                'name' => 'PHP 8.4 FPM',
+                'service' => $isRhel ? 'php84-php-fpm' : 'php8.4-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            'php8.3-fpm' => [
+                'name' => 'PHP 8.3 FPM',
+                'service' => $isRhel ? 'php83-php-fpm' : 'php8.3-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            'php8.2-fpm' => [
+                'name' => 'PHP 8.2 FPM',
+                'service' => $isRhel ? 'php82-php-fpm' : 'php8.2-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            'php8.1-fpm' => [
+                'name' => 'PHP 8.1 FPM',
+                'service' => $isRhel ? 'php81-php-fpm' : 'php8.1-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            'php8.0-fpm' => [
+                'name' => 'PHP 8.0 FPM',
+                'service' => $isRhel ? 'php80-php-fpm' : 'php8.0-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            'php7.4-fpm' => [
+                'name' => 'PHP 7.4 FPM',
+                'service' => $isRhel ? 'php74-php-fpm' : 'php7.4-fpm',
+                'supports_reload' => true,
+                'icon' => 'code',
+            ],
+            
+            // Process Managers
+            'supervisor' => [
+                'name' => 'Supervisor',
+                'service' => $isRhel ? 'supervisord' : 'supervisor',
+                'supports_reload' => true,
+                'icon' => 'display',
+            ],
+            
+            // Security
+            'fail2ban' => [
+                'name' => 'fail2ban',
+                'service' => 'fail2ban',
+                'supports_reload' => true,
+                'icon' => 'shield-shaded',
+            ],
+            
+            // Firewall
+            'firewall' => [
+                'name' => $isRhel ? 'Firewalld' : 'UFW Firewall',
+                'service' => $isRhel ? 'firewalld' : 'ufw',
+                'supports_reload' => false,
+                'icon' => 'shield-check',
+            ],
+        ];
+    }
+
+    /**
+     * Get OS family
+     */
+    public function getOsFamily(): string
+    {
+        return $this->osFamily;
+    }
 
     /**
      * Get all available services
