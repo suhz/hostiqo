@@ -166,24 +166,28 @@
         @yield('content')
     </div>
 
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.3/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.3/dist/sweetalert2.all.min.js" integrity="sha256-a9X7K3QlDKgLZcECwuPJrKLFYGNrDfLRlLvIWoxmvE0=" crossorigin="anonymous"></script>
     
     <script>
         // Copy to clipboard function
         function copyToClipboard(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalHTML = button.innerHTML;
-                button.innerHTML = '<i class="bi bi-check"></i> Copied!';
-                button.classList.remove('btn-outline-secondary');
-                button.classList.add('btn-success');
+            var $btn = $(button);
+            var originalHTML = $btn.html();
+            
+            navigator.clipboard.writeText(text).then(function() {
+                $btn.html('<i class="bi bi-check"></i> Copied!')
+                    .removeClass('btn-outline-secondary')
+                    .addClass('btn-success');
                 
-                setTimeout(() => {
-                    button.innerHTML = originalHTML;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-outline-secondary');
+                setTimeout(function() {
+                    $btn.html(originalHTML)
+                        .removeClass('btn-success')
+                        .addClass('btn-outline-secondary');
                 }, 2000);
             });
         }
@@ -199,12 +203,17 @@
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Yes, delete it!',
                 cancelButtonText: 'Cancel'
-            }).then((result) => result.isConfirmed);
+            }).then(function(result) {
+                return result.isConfirmed;
+            });
         }
         
         // Confirm action with SweetAlert2
-        async function confirmAction(title, message, confirmText = 'Yes, proceed!', icon = 'question') {
-            const result = await Swal.fire({
+        function confirmAction(title, message, confirmText, icon) {
+            confirmText = confirmText || 'Yes, proceed!';
+            icon = icon || 'question';
+            
+            return Swal.fire({
                 title: title,
                 text: message,
                 icon: icon,
@@ -213,65 +222,55 @@
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: confirmText,
                 cancelButtonText: 'Cancel'
+            }).then(function(result) {
+                return result.isConfirmed;
             });
-            return result.isConfirmed;
         }
         
         // Mobile menu toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuToggle = document.getElementById('mobileMenuToggle');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
+        $(function() {
+            var $sidebar = $('#sidebar');
+            var $overlay = $('#sidebarOverlay');
             
             function toggleMenu() {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
+                $sidebar.toggleClass('active');
+                $overlay.toggleClass('active');
             }
             
             function closeMenu() {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
+                $sidebar.removeClass('active');
+                $overlay.removeClass('active');
             }
             
             // Toggle menu on button click
-            menuToggle.addEventListener('click', toggleMenu);
+            $('#mobileMenuToggle').on('click', toggleMenu);
             
             // Close menu when clicking overlay
-            overlay.addEventListener('click', closeMenu);
+            $overlay.on('click', closeMenu);
             
             // Close menu when clicking a nav link (on mobile)
-            const navLinks = sidebar.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    if (window.innerWidth <= 992) {
-                        closeMenu();
-                    }
-                });
-            });
-            
-            // Close menu on window resize to desktop
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 992) {
+            $sidebar.find('.nav-link').on('click', function() {
+                if ($(window).width() <= 992) {
                     closeMenu();
                 }
             });
-        });
-        
-        // Auto-hide success alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
             
-            autoHideAlerts.forEach(function(alert) {
-                // Show with animation
+            // Close menu on window resize to desktop
+            $(window).on('resize', function() {
+                if ($(window).width() > 992) {
+                    closeMenu();
+                }
+            });
+            
+            // Auto-hide success alerts after 5 seconds
+            $('.auto-hide-alert').each(function() {
+                var $alert = $(this);
                 setTimeout(function() {
-                    // Start fade out
-                    alert.classList.remove('show');
-                    
-                    // Remove from DOM after fade animation completes
+                    $alert.removeClass('show');
                     setTimeout(function() {
-                        alert.remove();
-                    }, 150); // Bootstrap fade transition time
-                }, 5000); // 5 seconds
+                        $alert.remove();
+                    }, 150);
+                }, 5000);
             });
         });
     </script>

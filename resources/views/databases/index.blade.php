@@ -198,15 +198,15 @@
 
     <script>
         function toggleCard(id) {
-            const body = document.getElementById(`card-body-${id}`);
-            const chevron = document.getElementById(`chevron-${id}`);
+            var $body = $('#card-body-' + id);
+            var $chevron = $('#chevron-' + id);
             
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                chevron.classList.add('expanded');
+            if ($body.is(':hidden')) {
+                $body.show();
+                $chevron.addClass('expanded');
             } else {
-                body.style.display = 'none';
-                chevron.classList.remove('expanded');
+                $body.hide();
+                $chevron.removeClass('expanded');
             }
         }
     </script>

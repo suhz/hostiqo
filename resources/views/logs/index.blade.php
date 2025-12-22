@@ -112,38 +112,36 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const logTypeSelect = document.getElementById('logTypeSelect');
-    const websiteSelect = document.getElementById('websiteSelect');
-    const websiteLogsGroup = document.getElementById('websiteLogsGroup');
+$(function() {
+    var $logTypeSelect = $('#logTypeSelect');
+    var $websiteSelect = $('#websiteSelect');
     
     function checkWebsiteSpecificLog() {
-        const selectedType = logTypeSelect.value;
-        const isWebsiteSpecific = selectedType.startsWith('website-');
+        var selectedType = $logTypeSelect.val();
+        var isWebsiteSpecific = selectedType.indexOf('website-') === 0;
         
         // Highlight website selector if website-specific log is selected
         if (isWebsiteSpecific) {
-            websiteSelect.classList.add('border-warning');
-            if (!websiteSelect.value) {
-                // Show info that website must be selected
-                websiteSelect.parentElement.classList.add('was-validated');
+            $websiteSelect.addClass('border-warning');
+            if (!$websiteSelect.val()) {
+                $websiteSelect.parent().addClass('was-validated');
             }
         } else {
-            websiteSelect.classList.remove('border-warning');
-            websiteSelect.parentElement.classList.remove('was-validated');
+            $websiteSelect.removeClass('border-warning');
+            $websiteSelect.parent().removeClass('was-validated');
         }
     }
     
     // Check on page load
     checkWebsiteSpecificLog();
     
-    // Auto-submit when log type changes (if not website-specific or website is already selected)
-    logTypeSelect.addEventListener('change', function() {
+    // Auto-submit when log type changes
+    $logTypeSelect.on('change', function() {
         checkWebsiteSpecificLog();
         
-        const isWebsiteSpecific = this.value.startsWith('website-');
-        if (!isWebsiteSpecific || websiteSelect.value) {
-            document.getElementById('logForm').submit();
+        var isWebsiteSpecific = $(this).val().indexOf('website-') === 0;
+        if (!isWebsiteSpecific || $websiteSelect.val()) {
+            $('#logForm').submit();
         }
     });
 });

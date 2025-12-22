@@ -273,46 +273,33 @@
 
 <script>
 function renameItem(path, name) {
-    document.getElementById('renamePath').value = path;
-    document.getElementById('renameNewName').value = name;
-    new bootstrap.Modal(document.getElementById('renameModal')).show();
+    $('#renamePath').val(path);
+    $('#renameNewName').val(name);
+    new bootstrap.Modal($('#renameModal')[0]).show();
 }
 
 function chmodItem(path, perms) {
-    document.getElementById('chmodPath').value = path;
-    document.getElementById('chmodPerms').value = '';
-    new bootstrap.Modal(document.getElementById('chmodModal')).show();
+    $('#chmodPath').val(path);
+    $('#chmodPerms').val('');
+    new bootstrap.Modal($('#chmodModal')[0]).show();
 }
 
-async function deleteItem(path, type) {
-    const confirmed = await confirmDelete(`Delete this ${type}? This action cannot be undone!`);
-    
-    if (confirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('files.delete') }}';
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        const pathInput = document.createElement('input');
-        pathInput.type = 'hidden';
-        pathInput.name = 'path';
-        pathInput.value = path;
-        
-        const recursiveInput = document.createElement('input');
-        recursiveInput.type = 'hidden';
-        recursiveInput.name = 'recursive';
-        recursiveInput.value = type === 'directory' ? '1' : '0';
-        
-        form.appendChild(csrfInput);
-        form.appendChild(pathInput);
-        form.appendChild(recursiveInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
+function deleteItem(path, type) {
+    confirmDelete('Delete this ' + type + '? This action cannot be undone!').then(function(confirmed) {
+        if (confirmed) {
+            var $form = $('<form>', {
+                method: 'POST',
+                action: '{{ route('files.delete') }}'
+            });
+            
+            $form.append($('<input>', { type: 'hidden', name: '_token', value: '{{ csrf_token() }}' }));
+            $form.append($('<input>', { type: 'hidden', name: 'path', value: path }));
+            $form.append($('<input>', { type: 'hidden', name: 'recursive', value: type === 'directory' ? '1' : '0' }));
+            
+            $('body').append($form);
+            $form.submit();
+        }
+    });
 }
 </script>
 @endsection

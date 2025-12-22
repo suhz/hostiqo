@@ -206,40 +206,40 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const domainInput = document.getElementById('domain');
-    const localPathInput = document.getElementById('local_path');
-    let manuallyEdited = false;
+$(function() {
+    var $domainInput = $('#domain');
+    var $localPathInput = $('#local_path');
+    var manuallyEdited = false;
 
     // Track if user manually edited local path
-    localPathInput.addEventListener('input', function() {
-        if (this.value !== '') {
+    $localPathInput.on('input', function() {
+        if ($(this).val() !== '') {
             manuallyEdited = true;
         }
     });
 
     // Auto-generate local path from domain
-    domainInput.addEventListener('input', function() {
-        if (!manuallyEdited || localPathInput.value === '') {
-            let domain = this.value.trim();
+    $domainInput.on('input', function() {
+        if (!manuallyEdited || $localPathInput.val() === '') {
+            var domain = $(this).val().trim();
             if (domain) {
                 // Remove www. prefix if exists
                 domain = domain.replace(/^www\./, '');
                 
                 // Replace dots with underscores
-                const path = domain.replace(/\./g, '_');
+                var path = domain.replace(/\./g, '_');
                 
                 // Generate full path
-                localPathInput.value = '/var/www/' + path;
+                $localPathInput.val('/var/www/' + path);
             } else {
-                localPathInput.value = '';
+                $localPathInput.val('');
             }
         }
     });
 
     // Reset manual edit flag if user clears the field
-    localPathInput.addEventListener('keydown', function(e) {
-        if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
+    $localPathInput.on('keydown', function(e) {
+        if ((e.key === 'Backspace' || e.key === 'Delete') && $(this).val().length <= 1) {
             manuallyEdited = false;
         }
     });

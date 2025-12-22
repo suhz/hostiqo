@@ -209,7 +209,7 @@
 @if($latestMetric && $systemMetrics->isNotEmpty())
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(function() {
     // Configure Chart.js to use Montserrat font
     Chart.defaults.font.family = "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif";
     

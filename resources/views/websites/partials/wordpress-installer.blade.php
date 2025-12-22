@@ -230,126 +230,115 @@
 
 @push('scripts')
 <script>
-document.getElementById('wordpressInstallForm').addEventListener('submit', async function(e) {
+$('#wordpressInstallForm').on('submit', function(e) {
     e.preventDefault();
     
-    const form = this;
-    const installButton = document.getElementById('installButton');
-    const statusCard = document.getElementById('installationStatusCard');
-    const stepsContainer = document.getElementById('installationSteps');
-    const resultContainer = document.getElementById('installationResult');
-    const progressBar = document.getElementById('installProgress');
+    var $form = $(this);
+    var $installButton = $('#installButton');
+    var $statusCard = $('#installationStatusCard');
+    var $stepsContainer = $('#installationSteps');
+    var $resultContainer = $('#installationResult');
+    var $progressBar = $('#installProgress');
     
     // Disable form and show status card
-    installButton.disabled = true;
-    installButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Installing...';
-    form.querySelectorAll('input, button').forEach(el => el.disabled = true);
-    statusCard.style.display = 'block';
-    resultContainer.style.display = 'none';
+    $installButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Installing...');
+    $form.find('input, button').prop('disabled', true);
+    $statusCard.show();
+    $resultContainer.hide();
     
     // Scroll to status card
-    statusCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('html, body').animate({
+        scrollTop: $statusCard.offset().top
+    }, 500);
     
     // Prepare form data
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    var data = {};
+    $form.serializeArray().forEach(function(item) {
+        data[item.name] = item.value;
+    });
     
-    try {
-        const response = await fetch('{{ route("websites.wordpress.install", $website) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
+    $.ajax({
+        url: '{{ route("websites.wordpress.install", $website) }}',
+        method: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        data: JSON.stringify(data)
+    }).done(function(result) {
         if (result.success) {
             // Show success
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            progressBar.classList.remove('progress-bar-animated');
-            progressBar.classList.add('bg-success');
+            $progressBar.css('width', '100%').text('100%')
+                .removeClass('progress-bar-animated')
+                .addClass('bg-success');
             
             // Display installation steps
             if (result.data.steps) {
-                stepsContainer.innerHTML = result.data.steps.map(step => `
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                        <span>${step.step}</span>
-                    </div>
-                `).join('');
+                var stepsHtml = result.data.steps.map(function(step) {
+                    return '<div class="d-flex align-items-center mb-2">' +
+                        '<i class="bi bi-check-circle-fill text-success me-2"></i>' +
+                        '<span>' + step.step + '</span>' +
+                    '</div>';
+                }).join('');
+                $stepsContainer.html(stepsHtml);
             }
             
             // Show success message
-            resultContainer.innerHTML = `
-                <div class="alert alert-success">
-                    <h5 class="alert-heading">
-                        <i class="bi bi-check-circle me-2"></i> WordPress Installed Successfully!
-                    </h5>
-                    <hr>
-                    <p class="mb-2"><strong>Admin URL:</strong> <a href="${result.data.admin_url}" target="_blank">${result.data.admin_url}</a></p>
-                    <p class="mb-2"><strong>Admin Username:</strong> ${result.data.admin_user}</p>
-                    <p class="mb-0"><strong>Admin Password:</strong> [As entered in the form]</p>
-                    <hr>
-                    <div class="mt-3">
-                        <a href="${result.data.admin_url}" target="_blank" class="btn btn-success">
-                            <i class="bi bi-box-arrow-up-right me-1"></i> Open WordPress Admin
-                        </a>
-                        <button type="button" class="btn btn-secondary" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Page
-                        </button>
-                    </div>
-                </div>
-            `;
-            resultContainer.style.display = 'block';
+            $resultContainer.html(
+                '<div class="alert alert-success">' +
+                    '<h5 class="alert-heading">' +
+                        '<i class="bi bi-check-circle me-2"></i> WordPress Installed Successfully!' +
+                    '</h5>' +
+                    '<hr>' +
+                    '<p class="mb-2"><strong>Admin URL:</strong> <a href="' + result.data.admin_url + '" target="_blank">' + result.data.admin_url + '</a></p>' +
+                    '<p class="mb-2"><strong>Admin Username:</strong> ' + result.data.admin_user + '</p>' +
+                    '<p class="mb-0"><strong>Admin Password:</strong> [As entered in the form]</p>' +
+                    '<hr>' +
+                    '<div class="mt-3">' +
+                        '<a href="' + result.data.admin_url + '" target="_blank" class="btn btn-success">' +
+                            '<i class="bi bi-box-arrow-up-right me-1"></i> Open WordPress Admin' +
+                        '</a> ' +
+                        '<button type="button" class="btn btn-secondary" onclick="location.reload()">' +
+                            '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Page' +
+                        '</button>' +
+                    '</div>' +
+                '</div>'
+            ).show();
             
         } else {
-            // Show error
-            progressBar.classList.remove('progress-bar-animated');
-            progressBar.classList.add('bg-danger');
-            
-            resultContainer.innerHTML = `
-                <div class="alert alert-danger">
-                    <h5 class="alert-heading">
-                        <i class="bi bi-x-circle me-2"></i> Installation Failed
-                    </h5>
-                    <p class="mb-0">${result.message}</p>
-                    ${result.errors ? '<hr><ul class="mb-0">' + Object.values(result.errors).map(err => `<li>${err}</li>`).join('') + '</ul>' : ''}
-                </div>
-            `;
-            resultContainer.style.display = 'block';
-            
-            // Re-enable form
-            form.querySelectorAll('input, button').forEach(el => el.disabled = false);
-            installButton.disabled = false;
-            installButton.innerHTML = '<i class="bi bi-wordpress me-2"></i> Retry Installation';
+            showWpInstallError(result.message, result.errors, $form, $installButton, $progressBar, $resultContainer);
         }
-        
-    } catch (error) {
-        console.error('Installation error:', error);
-        
-        progressBar.classList.remove('progress-bar-animated');
-        progressBar.classList.add('bg-danger');
-        
-        resultContainer.innerHTML = `
-            <div class="alert alert-danger">
-                <h5 class="alert-heading">
-                    <i class="bi bi-x-circle me-2"></i> Installation Error
-                </h5>
-                <p class="mb-0">An unexpected error occurred. Please check the logs or try again.</p>
-            </div>
-        `;
-        resultContainer.style.display = 'block';
-        
-        // Re-enable form
-        form.querySelectorAll('input, button').forEach(el => el.disabled = false);
-        installButton.disabled = false;
-        installButton.innerHTML = '<i class="bi bi-wordpress me-2"></i> Retry Installation';
-    }
+    }).fail(function(xhr) {
+        var message = xhr.responseJSON ? xhr.responseJSON.message : 'An unexpected error occurred. Please check the logs or try again.';
+        showWpInstallError(message, null, $form, $installButton, $progressBar, $resultContainer);
+    });
 });
+
+function showWpInstallError(message, errors, $form, $installButton, $progressBar, $resultContainer) {
+    $progressBar.removeClass('progress-bar-animated').addClass('bg-danger');
+    
+    var errorsHtml = '';
+    if (errors) {
+        errorsHtml = '<hr><ul class="mb-0">';
+        $.each(errors, function(key, err) {
+            errorsHtml += '<li>' + err + '</li>';
+        });
+        errorsHtml += '</ul>';
+    }
+    
+    $resultContainer.html(
+        '<div class="alert alert-danger">' +
+            '<h5 class="alert-heading">' +
+                '<i class="bi bi-x-circle me-2"></i> Installation Failed' +
+            '</h5>' +
+            '<p class="mb-0">' + message + '</p>' +
+            errorsHtml +
+        '</div>'
+    ).show();
+    
+    // Re-enable form
+    $form.find('input, button').prop('disabled', false);
+    $installButton.prop('disabled', false).html('<i class="bi bi-wordpress me-2"></i> Retry Installation');
+}
 </script>
 @endpush

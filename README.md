@@ -47,14 +47,14 @@ A simple self-managed server panel built with Laravel for automating Git deploym
 - 🎯 **Severity Levels** - Info, Warning, and Critical alert classification
 - 🔄 **Auto-Check** - Runs every minute via Laravel Scheduler
 
-### 🛡️ Firewall Management (UFW)
-- 🔥 **UFW Control** - Enable/disable firewall from web interface
+### 🛡️ Firewall Management
+- 🔥 **Firewall Control** - Enable/disable firewall from web interface (UFW/firewalld)
 - 📋 **Rule Management** - Add, edit, and delete firewall rules
 - 🎯 **Port-Based Rules** - Allow/deny specific ports (e.g., 80, 443, 22)
 - 🌐 **IP Filtering** - Restrict access by IP address or CIDR range
 - ⬆️⬇️ **Direction Control** - Configure inbound, outbound, or both
 - 🔄 **Quick Actions** - Reset to defaults, reload rules
-- 🖥️ **Localhost Only** - Direct UFW management for self-hosted setups
+- 🖥️ **Multi-Platform** - UFW (Debian/Ubuntu) and firewalld (RHEL/Rocky/Alma)
 
 ### ⏰ Cron Jobs Management
 - 📅 **Crontab GUI** - Web interface for managing cron jobs
@@ -94,7 +94,8 @@ A simple self-managed server panel built with Laravel for automating Git deploym
 
 ## 📋 Requirements
 
-- Ubuntu 20.04+ / Debian 11+
+- **Ubuntu 20.04+** / **Debian 11+**
+- **Rocky Linux 8+** / **AlmaLinux 8+** / **CentOS Stream 8+**
 - Root access or sudo privileges
 - Domain name pointed to your server
 
@@ -137,10 +138,10 @@ sudo bash install.sh --phase4   # Nginx + SSL configuration
 
 ### What Gets Installed
 
-| Component | Version |
+| Component | Details |
 |-----------|---------|
-| PHP | 8.2 (with extensions) |
-| MySQL | 8.0 |
+| PHP | 7.4 - 8.4 (with OPcache + JIT auto-tuning) |
+| MySQL/MariaDB | MySQL 8.0 (Debian) / MariaDB (RHEL) |
 | Nginx | Latest |
 | Redis | Latest |
 | Node.js | 20.x LTS |
@@ -301,15 +302,26 @@ MONITORING_CHART_HOURS=6
 
 > ⚙️ The automated installer already provisions Supervisor programs `hostiqo-queue` and `hostiqo-scheduler`, so background workers start automatically on fresh installs. Only follow the manual steps below if you performed a custom/manual setup or need to reconfigure services.
 
-**Scheduler must be running** for metrics collection:
+**Queue worker and Scheduler must be running** for deployments and metrics collection:
 
 ```bash
 # Development
+php artisan queue:work
 php artisan schedule:work
 
-# Production (use Supervisor or systemd)
+# Production (use Supervisor)
+[program:hostiqo-queue]
+command=php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+directory=/var/www/hostiqo
+user=www-data
+numprocs=2
+autostart=true
+autorestart=true
+stopwaitsecs=3600
+
 [program:hostiqo-scheduler]
-command=php /path/to/artisan schedule:work
+command=php artisan schedule:work
+directory=/var/www/hostiqo
 user=www-data
 autostart=true
 autorestart=true
@@ -637,99 +649,106 @@ sudo certbot certificates
 
 ```
 app/
+├── Contracts/                       # Service interfaces
+│   ├── FirewallInterface.php        # Firewall service contract
+│   ├── NginxInterface.php           # Nginx service contract
+│   ├── PhpFpmInterface.php          # PHP-FPM service contract
+│   └── ServiceManagerInterface.php  # Service manager contract
 ├── Http/Controllers/
-│   ├── DashboardController.php      # Dashboard & statistics
-│   ├── ServerHealthController.php   # Server health monitoring (with time filters)
-│   ├── ServiceManagerController.php # Service Manager (systemctl for services)
-│   ├── WebhookController.php        # Webhook CRUD operations
-│   ├── WebsiteController.php        # Website/vhost management
-│   ├── DeploymentController.php     # Deployment management
-│   ├── WebhookHandlerController.php # Webhook API handler
 │   ├── AlertController.php          # Alert rules & history management
-│   ├── FirewallController.php       # UFW firewall management
-│   ├── CronJobController.php        # Cron jobs management
-│   ├── LogViewerController.php      # Log viewer
+│   ├── ArtisanController.php        # Artisan command runner
 │   ├── CloudflareController.php     # CloudFlare DNS management
+│   ├── CronJobController.php        # Cron jobs management
+│   ├── DashboardController.php      # Dashboard & statistics
 │   ├── DatabaseController.php       # Database management
-│   └── QueueController.php          # Queue monitoring
+│   ├── DeploymentController.php     # Deployment management
+│   ├── FileManagerController.php    # File manager
+│   ├── FirewallController.php       # Firewall management (UFW/firewalld)
+│   ├── HealthCheckController.php    # Health check endpoint
+│   ├── LogViewerController.php      # Log viewer
+│   ├── QueueController.php          # Queue monitoring
+│   ├── ServerHealthController.php   # Server health monitoring
+│   ├── ServiceManagerController.php # Service manager (systemctl)
+│   ├── SupervisorProgramController.php # Supervisor program management
+│   ├── WebhookController.php        # Webhook CRUD operations
+│   ├── WebhookHandlerController.php # Webhook API handler
+│   ├── WebsiteController.php        # Website/vhost management
+│   └── WordPressDeploymentController.php # WordPress deployment
 ├── Jobs/
-│   ├── ProcessDeployment.php        # Async deployment job
-│   ├── DeployNginxConfig.php        # Async Nginx/PHP-FPM deployment
-│   ├── SystemMonitorJob.php         # System metrics collection job
-│   ├── CheckAlertsJob.php           # Alert checking & notification job
+│   ├── CheckAlertsJob.php           # Alert checking & notification
 │   ├── CheckSslCertificates.php     # SSL certificate monitoring
-│   └── RenewSslCertificates.php     # SSL auto-renewal job
+│   ├── DeployNginxConfig.php        # Async Nginx/PHP-FPM deployment
+│   ├── ProcessDeployment.php        # Async deployment job
+│   ├── RenewSslCertificates.php     # SSL auto-renewal job
+│   ├── RequestSslCertificate.php    # SSL certificate request
+│   └── SystemMonitorJob.php         # System metrics collection
 ├── Models/
-│   ├── Webhook.php                  # Webhook model
-│   ├── Website.php                  # Website/vhost model
-│   ├── SshKey.php                   # SSH key model
-│   ├── Deployment.php               # Deployment model
-│   ├── SystemMetric.php             # System metrics model
-│   ├── AlertRule.php                # Alert rules model
 │   ├── Alert.php                    # Triggered alerts model
-│   ├── FirewallRule.php             # Firewall rules model (with seeder)
-│   └── CronJob.php                  # Cron jobs model
+│   ├── AlertRule.php                # Alert rules model
+│   ├── CronJob.php                  # Cron jobs model
+│   ├── Database.php                 # Database model
+│   ├── Deployment.php               # Deployment model
+│   ├── FirewallRule.php             # Firewall rules model
+│   ├── SshKey.php                   # SSH key model
+│   ├── SupervisorProgram.php        # Supervisor program model
+│   ├── SystemMetric.php             # System metrics model
+│   ├── Webhook.php                  # Webhook model
+│   └── Website.php                  # Website/vhost model
 └── Services/
-    ├── SshKeyService.php            # SSH key generation
-    ├── DeploymentService.php        # Git deployment logic
-    ├── NginxService.php             # Nginx config generation
-    ├── PhpFpmService.php            # PHP-FPM pool management
-    ├── Pm2Service.php               # PM2 ecosystem management
-    ├── SystemMonitorService.php     # System metrics collection
-    ├── ServiceManagerService.php    # Service Manager (systemctl wrapper)
-    ├── FirewallService.php          # UFW firewall commands
     ├── CloudflareService.php        # CloudFlare API integration
-    └── RemoteWebsiteService.php     # Remote website deployment
+    ├── DatabaseService.php          # Database management
+    ├── DeploymentService.php        # Git deployment logic
+    ├── FileManagerService.php       # File manager service
+    ├── Pm2Service.php               # PM2 ecosystem management
+    ├── QueueService.php             # Queue management
+    ├── SshKeyService.php            # SSH key generation
+    ├── SslService.php               # SSL certificate management
+    ├── SupervisorService.php        # Supervisor management
+    ├── SystemMonitorService.php     # System metrics collection
+    ├── WordPressInstallerService.php # WordPress installer
+    ├── Firewall/                    # Firewall services (multi-platform)
+    │   ├── FirewallFactory.php      # Factory for OS detection
+    │   ├── UfwService.php           # UFW (Debian/Ubuntu)
+    │   └── FirewalldService.php     # firewalld (RHEL/Rocky/Alma)
+    ├── Nginx/                       # Nginx services (multi-platform)
+    │   ├── NginxFactory.php         # Factory for OS detection
+    │   ├── DebianNginxService.php   # Debian/Ubuntu Nginx
+    │   ├── RhelNginxService.php     # RHEL/Rocky/Alma Nginx
+    │   └── LocalNginxService.php    # Local development
+    ├── PhpFpm/                      # PHP-FPM services (multi-platform)
+    │   ├── PhpFpmFactory.php        # Factory for OS detection
+    │   ├── DebianPhpFpmService.php  # Debian/Ubuntu PHP-FPM
+    │   ├── RhelPhpFpmService.php    # RHEL/Rocky/Alma (Remi) PHP-FPM
+    │   └── LocalPhpFpmService.php   # Local development
+    └── ServiceManager/              # Service manager (multi-platform)
+        ├── ServiceManagerFactory.php # Factory for OS detection
+        ├── DebianServiceManagerService.php # Debian/Ubuntu services
+        └── RhelServiceManagerService.php   # RHEL/Rocky/Alma services
 
 resources/views/
-├── layouts/
-│   └── app.blade.php                # Main Bootstrap 5 layout with sidebar nav
+├── layouts/app.blade.php            # Main Bootstrap 5 layout
 ├── dashboard.blade.php              # Dashboard with system overview
-├── server-health.blade.php          # Server health monitoring (with 1h/3h/6h/12h filters)
-├── websites/                        # Website management (modern card UI)
-│   ├── index.blade.php              # Card-based website list with collapsible details
-│   ├── create.blade.php
-│   ├── edit.blade.php
-│   └── show.blade.php
+├── server-health.blade.php          # Server health monitoring
+├── websites/                        # Website management views
 ├── webhooks/                        # Webhook views
-│   ├── index.blade.php
-│   ├── create.blade.php
-│   ├── edit.blade.php
-│   └── show.blade.php
 ├── deployments/                     # Deployment views
-│   ├── index.blade.php
-│   └── show.blade.php
 ├── alerts/                          # Alert management views
-│   ├── index.blade.php
-│   ├── create.blade.php
-│   └── edit.blade.php
 ├── firewall/                        # Firewall management views
-│   └── index.blade.php
-├── cron-jobs/                       # Cron jobs management views
-│   ├── index.blade.php
-│   ├── create.blade.php
-│   └── edit.blade.php
+├── cron-jobs/                       # Cron jobs views
 ├── logs/                            # Log viewer views
-│   └── index.blade.php
 ├── databases/                       # Database management views
-│   └── index.blade.php
-└── queues/                          # Queue monitoring views
-    └── index.blade.php
+├── queues/                          # Queue monitoring views
+├── file-manager/                    # File manager views
+└── supervisor/                      # Supervisor management views
 
 config/
 └── monitoring.php                   # System monitoring configuration
 
 storage/server/                      # Local development configs
-├── nginx/
-│   └── sites-available/             # Generated Nginx configs
-├── php/{version}/
-│   └── pool.d/                      # Generated PHP-FPM pools
+├── nginx/sites-available/           # Generated Nginx configs
+├── php/{version}/pool.d/            # Generated PHP-FPM pools
 ├── pm2/                             # Generated PM2 ecosystems
-├── www/{domain}/                    # Webroot directories (local only)
 └── logs/                            # Application logs
-    ├── nginx/
-    ├── php*/
-    └── pm2/
 ```
 
 ## 🎯 Example Post-Deploy Scripts
@@ -737,11 +756,21 @@ storage/server/                      # Local development configs
 ### Laravel Application:
 ```bash
 #!/bin/bash
-composer install --no-dev --optimize-autoloader
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+
+# Debian/Ubuntu - use specific PHP version (e.g., PHP 8.3)
+/usr/bin/php8.3 /usr/bin/composer install --no-dev --optimize-autoloader
+/usr/bin/php8.3 artisan migrate --force
+/usr/bin/php8.3 artisan config:cache
+/usr/bin/php8.3 artisan route:cache
+/usr/bin/php8.3 artisan view:cache
+
+# RHEL/Rocky/Alma - use Remi PHP paths (e.g., PHP 8.3)
+# /opt/remi/php83/root/usr/bin/php /usr/bin/composer install --no-dev --optimize-autoloader
+# /opt/remi/php83/root/usr/bin/php artisan migrate --force
+# /opt/remi/php83/root/usr/bin/php artisan config:cache
+# /opt/remi/php83/root/usr/bin/php artisan route:cache
+# /opt/remi/php83/root/usr/bin/php artisan view:cache
+
 npm install
 npm run build
 ```
@@ -768,7 +797,8 @@ pm2 save
 #!/bin/bash
 npm install
 npm run build
-rsync -avz dist/ /var/www/html/
+# Copy built files to public directory (adjust paths as needed)
+rsync -avz dist/ ./public/
 ```
 
 ## 🔒 Security Best Practices
@@ -789,7 +819,10 @@ rsync -avz dist/ /var/www/html/
 
 **Solution:**
 - Ensure queue worker is running: `php artisan queue:work`
-- Check queue table: `SELECT * FROM jobs;`
+- Check queue driver in `.env`: `QUEUE_CONNECTION=database` or `QUEUE_CONNECTION=redis`
+- Check pending jobs:
+  - Database: `SELECT * FROM jobs;`
+  - Redis: `redis-cli LLEN queues:default`
 - Review logs: `tail -f storage/logs/laravel.log`
 
 ### SSH Key Permission Denied
@@ -846,4 +879,7 @@ For issues, questions, or suggestions:
 
 ---
 
-**Built with ❤️ using Laravel & Bootstrap 5**
+<p align="center">
+  <b>Made with ❤️ by <a href="https://github.com/hymns">Muhammad Hamizi Jaminan</a></b><br>
+  <sub>Powered by Laravel & Bootstrap 5</sub>
+</p>

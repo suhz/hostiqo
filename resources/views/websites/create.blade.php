@@ -355,42 +355,42 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const domainInput = document.getElementById('domain');
-    const rootPathInput = document.getElementById('root_path');
-    let manuallyEdited = false;
+$(function() {
+    var $domainInput = $('#domain');
+    var $rootPathInput = $('#root_path');
+    var manuallyEdited = false;
 
     // Track if user manually edited root path
-    rootPathInput.addEventListener('input', function() {
-        if (this.value !== '') {
+    $rootPathInput.on('input', function() {
+        if ($(this).val() !== '') {
             manuallyEdited = true;
         }
     });
 
     // Auto-generate root path from domain
-    domainInput.addEventListener('input', function() {
+    $domainInput.on('input', function() {
         // Only auto-generate if user hasn't manually edited the root path
-        if (!manuallyEdited || rootPathInput.value === '') {
-            let domain = this.value.trim();
+        if (!manuallyEdited || $rootPathInput.val() === '') {
+            var domain = $(this).val().trim();
             
             if (domain) {
                 // Remove www. prefix if exists
                 domain = domain.replace(/^www\./, '');
                 
                 // Replace dots with underscores
-                const path = domain.replace(/\./g, '_');
+                var path = domain.replace(/\./g, '_');
                 
                 // Generate full path
-                rootPathInput.value = '/var/www/' + path;
+                $rootPathInput.val('/var/www/' + path);
             } else {
-                rootPathInput.value = '';
+                $rootPathInput.val('');
             }
         }
     });
 
     // Reset manual edit flag when root path is cleared
-    rootPathInput.addEventListener('keydown', function(e) {
-        if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
+    $rootPathInput.on('keydown', function(e) {
+        if ((e.key === 'Backspace' || e.key === 'Delete') && $(this).val().length <= 1) {
             manuallyEdited = false;
         }
     });

@@ -396,46 +396,46 @@
 
 @push('scripts')
 <script>
-let currentWizardStep = 1;
-const totalSteps = 4;
+var currentWizardStep = 1;
+var totalSteps = 4;
 
 // Wizard Navigation
 function updateWizardUI() {
     // Update step indicators
-    document.querySelectorAll('.wizard-step').forEach((step, index) => {
-        const stepNum = index + 1;
-        step.classList.remove('active', 'completed');
+    $('.wizard-step').each(function(index) {
+        var stepNum = index + 1;
+        $(this).removeClass('active completed');
         
         if (stepNum < currentWizardStep) {
-            step.classList.add('completed');
+            $(this).addClass('completed');
         } else if (stepNum === currentWizardStep) {
-            step.classList.add('active');
+            $(this).addClass('active');
         }
     });
     
     // Update panes
-    document.querySelectorAll('.wizard-pane').forEach((pane, index) => {
-        pane.classList.remove('active');
+    $('.wizard-pane').each(function(index) {
+        $(this).removeClass('active');
         if (index + 1 === currentWizardStep) {
-            pane.classList.add('active');
+            $(this).addClass('active');
         }
     });
     
     // Update buttons
-    document.getElementById('currentStep').textContent = currentWizardStep;
-    document.getElementById('wizardPrevBtn').style.display = currentWizardStep === 1 ? 'none' : 'inline-block';
-    document.getElementById('wizardNextBtn').style.display = currentWizardStep === totalSteps ? 'none' : 'inline-block';
-    document.getElementById('quickInstallBtn').style.display = currentWizardStep === totalSteps ? 'inline-block' : 'none';
+    $('#currentStep').text(currentWizardStep);
+    $('#wizardPrevBtn').toggle(currentWizardStep !== 1);
+    $('#wizardNextBtn').toggle(currentWizardStep !== totalSteps);
+    $('#quickInstallBtn').toggle(currentWizardStep === totalSteps);
 }
 
-document.getElementById('wizardNextBtn').addEventListener('click', function() {
+$('#wizardNextBtn').on('click', function() {
     if (currentWizardStep < totalSteps) {
         currentWizardStep++;
         updateWizardUI();
     }
 });
 
-document.getElementById('wizardPrevBtn').addEventListener('click', function() {
+$('#wizardPrevBtn').on('click', function() {
     if (currentWizardStep > 1) {
         currentWizardStep--;
         updateWizardUI();
@@ -444,78 +444,72 @@ document.getElementById('wizardPrevBtn').addEventListener('click', function() {
 
 // Toggle feature card active state
 function toggleFeature(checkboxId, card) {
-    const checkbox = document.getElementById(checkboxId);
-    checkbox.checked = !checkbox.checked;
-    card.classList.toggle('active', checkbox.checked);
+    var $checkbox = $('#' + checkboxId);
+    $checkbox.prop('checked', !$checkbox.prop('checked'));
+    $(card).toggleClass('active', $checkbox.prop('checked'));
 }
 
 // Auto-fill database name and user based on domain
-document.getElementById('domain').addEventListener('input', function(e) {
-    const domain = e.target.value.replace(/[^a-zA-Z0-9]/g, '_');
+$('#domain').on('input', function() {
+    var domain = $(this).val().replace(/[^a-zA-Z0-9]/g, '_');
     if (domain) {
-        document.getElementById('db_name').value = domain + '_wp';
-        document.getElementById('db_user').value = domain.substring(0, 20) + '_user';
+        $('#db_name').val(domain + '_wp');
+        $('#db_user').val(domain.substring(0, 20) + '_user');
     }
 });
 
-document.getElementById('wordpressQuickInstallForm').addEventListener('submit', async function(e) {
+$('#wordpressQuickInstallForm').on('submit', function(e) {
     e.preventDefault();
     
-    const form = this;
-    const submitBtn = document.getElementById('quickInstallBtn');
-    const progressDiv = document.getElementById('quickInstallProgress');
-    const statusDiv = document.getElementById('quickInstallStatus');
+    var $form = $(this);
+    var $submitBtn = $('#quickInstallBtn');
+    var $progressDiv = $('#quickInstallProgress');
+    var $statusDiv = $('#quickInstallStatus');
     
     // Disable form
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Deploying...';
-    form.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
-    progressDiv.style.display = 'block';
+    $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Deploying...');
+    $form.find('input, select, button').prop('disabled', true);
+    $progressDiv.show();
     
     // Prepare data
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    var data = {};
+    $form.serializeArray().forEach(function(item) {
+        data[item.name] = item.value;
+    });
     
-    try {
-        statusDiv.textContent = 'Creating website configuration...';
+    $statusDiv.text('Creating website configuration...');
+    
+    // Step 1: Create website
+    $.ajax({
+        url: '{{ route("websites.store") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        data: JSON.stringify({
+            name: data.website_name,
+            domain: data.domain,
+            project_type: 'php',
+            php_version: data.php_version || '8.3',
+            root_path: '/var/www/' + data.domain,
+            framework: 'wordpress',
+            status: 'pending'
+        })
+    }).done(function(websiteData) {
+        var websiteId = websiteData.id;
         
-        // Step 1: Create website
-        const websiteResponse = await fetch('{{ route("websites.store") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                name: data.website_name,
-                domain: data.domain,
-                project_type: 'php',
-                php_version: data.php_version || '8.3',
-                root_path: '/var/www/' + data.domain,
-                framework: 'wordpress', // Mark as WordPress
-                status: 'pending'
-            })
-        });
-        
-        if (!websiteResponse.ok) {
-            throw new Error('Failed to create website');
-        }
-        
-        const websiteData = await websiteResponse.json();
-        const websiteId = websiteData.id;
-        
-        statusDiv.textContent = 'Installing WordPress...';
+        $statusDiv.text('Installing WordPress...');
         
         // Step 2: Install WordPress
-        const installResponse = await fetch(`/websites/${websiteId}/wordpress/install`, {
+        $.ajax({
+            url: '/websites/' + websiteId + '/wordpress/install',
             method: 'POST',
+            contentType: 'application/json',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify({
+            data: JSON.stringify({
                 db_name: data.db_name,
                 db_user: data.db_user,
                 db_password: data.db_password,
@@ -528,48 +522,49 @@ document.getElementById('wordpressQuickInstallForm').addEventListener('submit', 
                 enable_cache: data.enable_cache === '1',
                 install_plugins: data.install_plugins === '1'
             })
+        }).done(function(installResult) {
+            if (installResult.success) {
+                $progressDiv.html(
+                    '<div class="alert alert-success">' +
+                        '<h5 class="alert-heading">' +
+                            '<i class="bi bi-check-circle me-2"></i> WordPress Deployed Successfully!' +
+                        '</h5>' +
+                        '<hr>' +
+                        '<p><strong>Site:</strong> ' + data.website_name + ' (' + data.domain + ')</p>' +
+                        '<p><strong>Admin URL:</strong> <a href="' + installResult.data.admin_url + '" target="_blank">' + installResult.data.admin_url + '</a></p>' +
+                        '<p class="mb-0"><strong>Admin Username:</strong> ' + installResult.data.admin_user + '</p>' +
+                        '<hr>' +
+                        '<p class="text-muted mb-0"><small>Redirecting to deployment list...</small></p>' +
+                    '</div>'
+                );
+                
+                setTimeout(function() {
+                    window.location.href = '{{ route("websites.index", ["type" => "deployment"]) }}';
+                }, 2000);
+            } else {
+                throw new Error(installResult.message || 'Installation failed');
+            }
+        }).fail(function(xhr) {
+            var message = xhr.responseJSON ? xhr.responseJSON.message : 'Installation failed';
+            showDeployError(message, $form, $submitBtn, $progressDiv);
         });
-        
-        const installResult = await installResponse.json();
-        
-        if (installResult.success) {
-            // Success! Show success message and reload after 2 seconds
-            progressDiv.innerHTML = `
-                <div class="alert alert-success">
-                    <h5 class="alert-heading">
-                        <i class="bi bi-check-circle me-2"></i> WordPress Deployed Successfully!
-                    </h5>
-                    <hr>
-                    <p><strong>Site:</strong> ${data.website_name} (${data.domain})</p>
-                    <p><strong>Admin URL:</strong> <a href="${installResult.data.admin_url}" target="_blank">${installResult.data.admin_url}</a></p>
-                    <p class="mb-0"><strong>Admin Username:</strong> ${installResult.data.admin_user}</p>
-                    <hr>
-                    <p class="text-muted mb-0"><small>Redirecting to deployment list...</small></p>
-                </div>
-            `;
-            
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = '{{ route("websites.index", ["type" => "deployment"]) }}';
-            }, 2000);
-        } else {
-            throw new Error(installResult.message || 'Installation failed');
-        }
-        
-    } catch (error) {
-        console.error('Deployment error:', error);
-        progressDiv.innerHTML = `
-            <div class="alert alert-danger">
-                <h5 class="alert-heading"><i class="bi bi-x-circle me-2"></i> Deployment Failed</h5>
-                <p class="mb-0">${error.message}</p>
-            </div>
-        `;
-        
-        // Re-enable form
-        form.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-rocket-takeoff me-2"></i> Retry Deployment';
-    }
+    }).fail(function(xhr) {
+        var message = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to create website';
+        showDeployError(message, $form, $submitBtn, $progressDiv);
+    });
 });
+
+function showDeployError(message, $form, $submitBtn, $progressDiv) {
+    console.error('Deployment error:', message);
+    $progressDiv.html(
+        '<div class="alert alert-danger">' +
+            '<h5 class="alert-heading"><i class="bi bi-x-circle me-2"></i> Deployment Failed</h5>' +
+            '<p class="mb-0">' + message + '</p>' +
+        '</div>'
+    );
+    
+    $form.find('input, select, button').prop('disabled', false);
+    $submitBtn.prop('disabled', false).html('<i class="bi bi-rocket-takeoff me-2"></i> Retry Deployment');
+}
 </script>
 @endpush

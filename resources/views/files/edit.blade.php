@@ -178,57 +178,52 @@
 </div>
 
 <script>
-// Keyboard shortcut for save
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        document.getElementById('editorForm').submit();
-    }
-});
-
-// Update character and line count
-const textarea = document.getElementById('fileContent');
-function updateCounts() {
-    document.getElementById('charCount').textContent = textarea.value.length;
-    document.getElementById('lineCount').textContent = textarea.value.split('\n').length;
-}
-textarea.addEventListener('input', updateCounts);
-updateCounts();
-
-// Tab key support
-textarea.addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = this.selectionStart;
-        const end = this.selectionEnd;
-        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-        this.selectionStart = this.selectionEnd = start + 4;
-    }
-});
-
-async function deleteFile() {
-    const confirmed = await confirmDelete('Are you sure you want to delete this file? This action cannot be undone!');
+$(function() {
+    var $textarea = $('#fileContent');
     
-    if (confirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('files.delete') }}';
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        const pathInput = document.createElement('input');
-        pathInput.type = 'hidden';
-        pathInput.name = 'path';
-        pathInput.value = '{{ $path }}';
-        
-        form.appendChild(csrfInput);
-        form.appendChild(pathInput);
-        document.body.appendChild(form);
-        form.submit();
+    // Keyboard shortcut for save
+    $(document).on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            $('#editorForm').submit();
+        }
+    });
+    
+    // Update character and line count
+    function updateCounts() {
+        $('#charCount').text($textarea.val().length);
+        $('#lineCount').text($textarea.val().split('\n').length);
     }
+    $textarea.on('input', updateCounts);
+    updateCounts();
+    
+    // Tab key support
+    $textarea.on('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            $(this).val($(this).val().substring(0, start) + '    ' + $(this).val().substring(end));
+            this.selectionStart = this.selectionEnd = start + 4;
+        }
+    });
+});
+
+function deleteFile() {
+    confirmDelete('Are you sure you want to delete this file? This action cannot be undone!').then(function(confirmed) {
+        if (confirmed) {
+            var $form = $('<form>', {
+                method: 'POST',
+                action: '{{ route('files.delete') }}'
+            });
+            
+            $form.append($('<input>', { type: 'hidden', name: '_token', value: '{{ csrf_token() }}' }));
+            $form.append($('<input>', { type: 'hidden', name: 'path', value: '{{ $path }}' }));
+            
+            $('body').append($form);
+            $form.submit();
+        }
+    });
 }
 </script>
 @endsection
