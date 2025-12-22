@@ -212,6 +212,56 @@ install_prerequisites_debian() {
         print_success "PHP $version installed"
     done
     
+    # Configure PHP OPcache + JIT
+    print_info "Configuring PHP OPcache + JIT..."
+    TOTAL_RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+    OPCACHE_MEM=$((TOTAL_RAM_MB / 8))
+    [ $OPCACHE_MEM -lt 128 ] && OPCACHE_MEM=128
+    [ $OPCACHE_MEM -gt 512 ] && OPCACHE_MEM=512
+    JIT_BUFFER=$((OPCACHE_MEM / 4))
+    [ $JIT_BUFFER -lt 32 ] && JIT_BUFFER=32
+    
+    for version in 7.4 8.0 8.1 8.2 8.3 8.4; do
+        if [ -d "/etc/php/$version" ]; then
+            cat > "/etc/php/$version/mods-available/opcache-hostiqo.ini" << OPCACHE
+[opcache]
+; Hostiqo PHP OPcache + JIT Tuning
+; Auto-calculated based on ${TOTAL_RAM_MB}MB total RAM
+
+; Enable OPcache
+opcache.enable=1
+opcache.enable_cli=1
+
+; Memory settings
+opcache.memory_consumption=${OPCACHE_MEM}
+opcache.interned_strings_buffer=32
+opcache.max_accelerated_files=20000
+
+; Revalidation (production-ready)
+opcache.validate_timestamps=1
+opcache.revalidate_freq=60
+
+; Performance optimizations
+opcache.enable_file_override=1
+opcache.save_comments=1
+opcache.max_wasted_percentage=10
+OPCACHE
+            # Add JIT for PHP 8.0+
+            if [[ "$version" =~ ^8\. ]]; then
+                cat >> "/etc/php/$version/mods-available/opcache-hostiqo.ini" << OPCACHE
+
+; JIT (PHP 8.0+) - significant performance boost
+opcache.jit=1255
+opcache.jit_buffer_size=${JIT_BUFFER}M
+OPCACHE
+            fi
+            # Enable the config
+            ln -sf "/etc/php/$version/mods-available/opcache-hostiqo.ini" "/etc/php/$version/fpm/conf.d/99-opcache-hostiqo.ini" 2>/dev/null || true
+            ln -sf "/etc/php/$version/mods-available/opcache-hostiqo.ini" "/etc/php/$version/cli/conf.d/99-opcache-hostiqo.ini" 2>/dev/null || true
+        fi
+    done
+    print_success "PHP OPcache + JIT configured"
+    
     # Install Node.js
     print_info "Adding NodeSource repository for Node.js 20..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
@@ -347,6 +397,55 @@ install_prerequisites_rhel() {
     if [ ! -f /usr/bin/php ]; then
         ln -sf /opt/remi/php84/root/usr/bin/php /usr/bin/php
     fi
+
+    # Configure PHP OPcache + JIT
+    print_info "Configuring PHP OPcache + JIT..."
+    TOTAL_RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+    OPCACHE_MEM=$((TOTAL_RAM_MB / 8))
+    [ $OPCACHE_MEM -lt 128 ] && OPCACHE_MEM=128
+    [ $OPCACHE_MEM -gt 512 ] && OPCACHE_MEM=512
+    JIT_BUFFER=$((OPCACHE_MEM / 4))
+    [ $JIT_BUFFER -lt 32 ] && JIT_BUFFER=32
+    
+    for version in 74 80 81 82 83 84; do
+        version_dot="${version:0:1}.${version:1}"
+        REMI_PHP_DIR="/etc/opt/remi/php${version}"
+        if [ -d "$REMI_PHP_DIR" ]; then
+            cat > "$REMI_PHP_DIR/php.d/99-opcache-hostiqo.ini" << OPCACHE
+[opcache]
+; Hostiqo PHP OPcache + JIT Tuning
+; Auto-calculated based on ${TOTAL_RAM_MB}MB total RAM
+
+; Enable OPcache
+opcache.enable=1
+opcache.enable_cli=1
+
+; Memory settings
+opcache.memory_consumption=${OPCACHE_MEM}
+opcache.interned_strings_buffer=32
+opcache.max_accelerated_files=20000
+
+; Revalidation (production-ready)
+opcache.validate_timestamps=1
+opcache.revalidate_freq=60
+
+; Performance optimizations
+opcache.enable_file_override=1
+opcache.save_comments=1
+opcache.max_wasted_percentage=10
+OPCACHE
+            # Add JIT for PHP 8.0+
+            if [[ "$version" =~ ^8 ]]; then
+                cat >> "$REMI_PHP_DIR/php.d/99-opcache-hostiqo.ini" << OPCACHE
+
+; JIT (PHP 8.0+) - significant performance boost
+opcache.jit=1255
+opcache.jit_buffer_size=${JIT_BUFFER}M
+OPCACHE
+            fi
+        fi
+    done
+    print_success "PHP OPcache + JIT configured"
 
     # Install Node.js
     print_info "Adding NodeSource repository for Node.js 20..."
@@ -992,8 +1091,14 @@ MYSQL_SCRIPT
     if sudo -u $WEB_USER php artisan migrate --force > /dev/null 2>&1; then
         print_success "Migrations completed"
         
-        # Seed firewall rules
-        sudo -u $WEB_USER php artisan db:seed --class=FirewallRuleSeeder --force > /dev/null 2>&1 || true
+        # Seed firewall rules (only if table is empty)
+        FIREWALL_COUNT=$(sudo -u $WEB_USER php artisan tinker --execute="echo \App\Models\FirewallRule::count();" 2>/dev/null | tail -1)
+        if [ "$FIREWALL_COUNT" = "0" ] || [ -z "$FIREWALL_COUNT" ]; then
+            sudo -u $WEB_USER php artisan db:seed --class=FirewallRuleSeeder --force > /dev/null 2>&1 || true
+            print_success "Firewall rules seeded"
+        else
+            print_info "Firewall rules already exist, skipping seeder"
+        fi
     fi
     
     # Create admin user
@@ -1059,7 +1164,7 @@ MYSQL_SCRIPT
     cat > "$SUPERVISOR_DIR/hostiqo-queue.$SUPERVISOR_EXT" << EOF
 [program:hostiqo-queue]
 process_name=%(program_name)s_%(process_num)02d
-command=php $APP_DIR/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+command=php artisan queue:work --sleep=3 --tries=3 --max-time=3600
 directory=$APP_DIR
 autostart=true
 autorestart=true
@@ -1075,7 +1180,7 @@ EOF
     cat > "$SUPERVISOR_DIR/hostiqo-scheduler.$SUPERVISOR_EXT" << EOF
 [program:hostiqo-scheduler]
 process_name=%(program_name)s
-command=php $APP_DIR/artisan schedule:work
+command=php artisan schedule:work
 directory=$APP_DIR
 autostart=true
 autorestart=true
@@ -1299,7 +1404,7 @@ ssl_session_tickets off;
 # OCSP Stapling
 ssl_stapling on;
 ssl_stapling_verify on;
-resolver 8.8.8.8 8.8.4.4 valid=300s;
+resolver 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 valid=300s;
 resolver_timeout 5s;
 
 # HSTS (2 years)
